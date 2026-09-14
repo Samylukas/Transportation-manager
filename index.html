@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Samy Fleet Pro 2026</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
@@ -87,7 +89,7 @@
             body * { visibility: hidden !important; }
             #reportPrintArea, #reportPrintArea * { visibility: visible !important; }
             #reportPrintArea { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            .scroll-btn-group, .nav-tabs, .header-bar, .action-buttons, .grid-form, #toastStack, .btn-grid-container { display: none !important; }
+            .scroll-btn-group, .nav-tabs, .header-bar, .grid-form, #toastStack, .btn-grid-container { display: none !important; }
             #reportPrintArea table { width: 100% !important; border-collapse: collapse !important; margin-top: 15px; font-size: 11pt; }
             #reportPrintArea th { background-color: #1e3c72 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 10px; border: 1.5px solid #1e3c72 !important; font-weight: bold; }
             #reportPrintArea td { padding: 8px; border: 1px solid #333 !important; text-align: center; color: #000; font-weight: 500; }
@@ -101,6 +103,15 @@
 </head>
 <body>
 <div id="toastStack"></div>
+
+<!-- Modal Viewer -->
+<div id="printModal" style="display:none; position: fixed; inset: 0; background: #fff; z-index: 9999999; flex-direction: column; padding: 15px; overflow-y: auto;">
+    <div class="print-modal-bar" style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; background: #1e3c72; padding: 10px; border-radius: 8px;">
+        <button class="btn btn-green" onclick="downloadModalAsImage()">💾 Save Report / حفظ التقرير</button>
+        <button class="btn btn-red" onclick="closePrintModal()">❌ Close / إغلاق</button>
+    </div>
+    <div id="printModalContent" style="width:100%; background:#fff; padding:15px;"></div>
+</div>
 
 <div class="scroll-btn-group">
     <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">⏫</button>
@@ -125,6 +136,7 @@
     <div class="header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
             <span id="userInfo">👤 Welcome</span>
+            <!-- تم ضبط علامة الشبكة للتفاعل مع حالة الإنترنت مباشرة -->
             <div id="networkStatus" class="network-badge network-online" onclick="forceAppSync()">🟢 Online</div>
         </div>
         <div style="display:flex; gap:10px;">
@@ -133,20 +145,22 @@
         </div>
     </div>
 
+    <!-- الداشبورد تم مسحه لتوفير المساحة -->
+
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="showTab('addTripTab', this)" data-tr="tab_add">📝 Add Trip</button>
         <button class="tab-btn admin-only" onclick="showTab('mastersTab', this)" data-tr="tab_masters">⚙️ Masters</button>
         <button class="tab-btn admin-only" onclick="showTab('financeTab', this)" data-tr="tab_fin">💵 Finance</button>
         <button class="tab-btn admin-only" onclick="showTab('maintenanceTab', this)" data-tr="tab_mnt">🔧 Maintenance</button>
         <button class="tab-btn admin-only" onclick="showTab('reportsTab', this)" data-tr="tab_rep">📊 Reports</button>
-        <button class="tab-btn" onclick="showTab('usersTab', this)" data-tr="tab_users">🔐 Users</button>
+        <button class="tab-btn admin-only" onclick="showTab('usersTab', this)" data-tr="tab_users">🔐 Users</button>
     </div>
 
     <!-- Tab 1: Add Trip -->
     <div id="addTripTab" class="tab-content active">
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f39c12; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 class="section-title" data-tr="add_title">📝 Add New Trip</h2>
+                <h2 class="section-title" id="formTripTitle" data-tr="add_title">📝 Add / Edit Trip</h2>
                 <div style="display: flex; gap: 5px;">
                     <button class="btn btn-green" style="padding: 5px 10px;" onclick="clearForm()">🆕</button>
                     <button class="btn btn-gray" style="padding: 5px 10px;" onclick="clearForm()">🧹</button>
@@ -316,6 +330,7 @@
                         <option value="client" data-tr="opt_client">Client Report</option>
                         <option value="driver" data-tr="opt_driver">Partner Report</option>
                         <option value="trip_detailed" data-tr="opt_trip">Trip Report</option>
+                        <option value="trips" data-tr="opt_analysis">Trips Analysis Chart</option>
                         <option value="finance" data-tr="opt_fin">Finance Report</option>
                         <option value="maintenance" data-tr="opt_mnt">Maintenance Report</option>
                         <option value="net_profit" data-tr="opt_net_profit" style="font-weight:bold; color:#1e3c72;">Net Profit Summary 💰</option>
@@ -342,7 +357,7 @@
         </div>
     </div>
 
-    <!-- Tab: Users Management & Change Password -->
+    <!-- Tab: Users Management -->
     <div id="usersTab" class="tab-content">
         <div class="card">
             <h2 class="section-title">🔑 Change Password</h2>
@@ -396,7 +411,9 @@
 </div>
 
 <script>
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZIhgfY0TiioihvR34rGMpDSIOUMv1rft37aBxH5_JJp0NhVtl5wYHg/exec";    
+    // ضع الرابط الخاص بك الذي كان يعمل في الكود القديم هنا
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyH8WrOZiqBqwYVo5NGc_Rg0EMS_m7LoB2bi1n6-NSYg3P7_uVLRzzq4dJAuJ28SPsMww/exec"; 
+    
     let loggedInUser = ''; let userRole = '';
     let usersDB = [], clientsDB = [], driversDB = []; tripsDB = []; 
     let recentTripsDB = [], financesDB = [], maintenanceDB = [];
@@ -408,9 +425,33 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
 
     let currentLang = 'en';
     const dict = {
-        'en': { username:"Username:", password:"Password:", logout:"Logout", dash_rev:"Monthly Profit (EGP)", dash_trips:"Monthly Trips", dash_top:"Top Partner", tab_add:"📝 Add Trip", tab_masters:"⚙️ Masters", tab_fin:"💵 Finance", tab_mnt:"🔧 Maintenance", tab_rep:"📊 Reports", tab_users:"🔐 Users", add_title:"📝 Add New Trip", client:"Client:", driver:"Partner:", vehicle:"Vehicle Type:", v_limo:"Limousine", v_micro:"Microbus", v_coaster:"Coaster", v_bus:"Bus", trip:"Trip Name:", date:"Date & Time:", notes:"Notes:", rev_client:"💰 Revenue (Client):", fee_driver:"💵 Partner Fee:", net:"Net Commission:", save_trip:"Save Trip 💾", recent_trips:"🕒 Recent Trips", rev:"Rev", fee:"Fee", lbl_clients:"👥 Clients List", lbl_partners:"🤝 Partners & Phones", rep_type:"Type", rep_cat:"Category", rep_amt:"Amount", rep_loc:"Location", rep_odo:"Odometer", rep_type_select:"Report Type:", target:"Target:", rep_from:"From Date:", rep_to:"To Date:", btn_search:"Search 🔍", btn_excel:"PC Excel 📊", btn_print:"PC Print 🖨️", opt_client:"Client Report", opt_driver:"Partner Report", opt_trip:"Trip Report", opt_fin:"Finance Report", opt_mnt:"Maintenance Report", opt_net_profit: "Net Profit Summary 💰", th_num:"#", th_desc:"Description", th_tot:"Total" },
-        'ar': { username:"اسم المستخدم:", password:"كلمة المرور:", logout:"خروج", dash_rev:"أرباح الشهر (EGP)", dash_trips:"عدد مشاوير الشهر", dash_top:"نجم الشهر (شريك)", tab_add:"📝 إضافة مشوار", tab_masters:"⚙️ الإعدادات", tab_fin:"💵 المالية", tab_mnt:"🔧 الصيانة", tab_rep:"📊 التقارير", tab_users:"🔐 الحسابات", add_title:"📝 إضافة مشوار جديد", client:"العميل:", driver:"الشريك (السائق):", vehicle:"نوع السيارة:", v_limo:"ليموزين / ملاكي", v_micro:"ميكروباص", v_coaster:"كوستر / ميني باص", v_bus:"أتوبيس", trip:"اسم المشوار:", date:"التاريخ والوقت:", notes:"ملاحظات:", rev_client:"💰 حساب العميل (EGP):", fee_driver:"💵 حساب الشريك (EGP):", net:"صافي العمولة:", save_trip:"حفظ المشوار 💾", recent_trips:"🕒 أحدث المشاوير", rev:"حساب", fee:"شريك", lbl_clients:"👥 قائمة العملاء", lbl_partners:"🤝 الشركاء والهواتف", rep_type:"النوع", rep_cat:"التصنيف / البند", rep_amt:"المبلغ", rep_loc:"المكان", rep_odo:"العداد", rep_type_select:"نوع التقرير:", target:"الهدف:", rep_from:"من تاريخ:", rep_to:"إلى تاريخ:", btn_search:"بحث 🔍", btn_excel:"إكسيل 📊", btn_print:"طباعة 🖨️", opt_client:"تقرير عميل", opt_driver:"تقرير شريك", opt_trip:"تقرير مشوار", opt_fin:"التقرير المالي", opt_mnt:"تقرير الصيانة", opt_net_profit: "تقرير صافي الربح 💰", th_num:"#", th_desc:"البيان / المشوار", th_tot:"الإجمالي" }
+        'en': { username:"Username:", password:"Password:", logout:"Logout", dash_rev:"Monthly Profit (EGP)", dash_trips:"Monthly Trips", dash_top:"Top Partner", tab_add:"📝 Add Trip", tab_masters:"⚙️ Masters", tab_fin:"💵 Finance", tab_mnt:"🔧 Maintenance", tab_rep:"📊 Reports", tab_users:"🔐 Users", add_title:"📝 Add / Edit Trip", client:"Client:", driver:"Partner:", vehicle:"Vehicle Type:", v_limo:"Limousine", v_micro:"Microbus", v_coaster:"Coaster", v_bus:"Bus", trip:"Trip Name:", date:"Date & Time:", notes:"Notes:", rev_client:"💰 Revenue (Client):", fee_driver:"💵 Partner Fee:", net:"Net Commission:", save_trip:"Save Trip 💾", recent_trips:"🕒 Recent Trips", rev:"Rev", fee:"Fee", lbl_clients:"👥 Clients List", lbl_partners:"🤝 Partners & Phones", rep_type:"Type", rep_cat:"Category", rep_amt:"Amount", rep_loc:"Location", rep_odo:"Odometer", rep_type_select:"Report Type:", target:"Target:", rep_from:"From Date:", rep_to:"To Date:", btn_search:"Search 🔍", btn_excel:"PC Excel 📊", btn_print:"PC Print 🖨️", opt_client:"Client Report", opt_driver:"Partner Report", opt_trip:"Trip Report", opt_fin:"Finance Report", opt_mnt:"Maintenance Report", opt_net_profit: "Net Profit Summary 💰", th_num:"#", th_desc:"Description", th_tot:"Total" },
+        'ar': { username:"اسم المستخدم:", password:"كلمة المرور:", logout:"خروج", dash_rev:"أرباح الشهر (EGP)", dash_trips:"عدد مشاوير الشهر", dash_top:"نجم الشهر (شريك)", tab_add:"📝 إضافة مشوار", tab_masters:"⚙️ الإعدادات", tab_fin:"💵 المالية", tab_mnt:"🔧 الصيانة", tab_rep:"📊 التقارير", tab_users:"🔐 الحسابات", add_title:"📝 إضافة / تعديل مشوار", client:"العميل:", driver:"الشريك (السائق):", vehicle:"نوع السيارة:", v_limo:"ليموزين / ملاكي", v_micro:"ميكروباص", v_coaster:"كوستر / ميني باص", v_bus:"أتوبيس", trip:"اسم المشوار:", date:"التاريخ والوقت:", notes:"ملاحظات:", rev_client:"💰 حساب العميل (EGP):", fee_driver:"💵 حساب الشريك (EGP):", net:"صافي العمولة:", save_trip:"حفظ المشوار 💾", recent_trips:"🕒 أحدث المشاوير", rev:"حساب", fee:"شريك", lbl_clients:"👥 قائمة العملاء", lbl_partners:"🤝 الشركاء والهواتف", rep_type:"النوع", rep_cat:"التصنيف / البند", rep_amt:"المبلغ", rep_loc:"المكان", rep_odo:"العداد", rep_type_select:"نوع التقرير:", target:"الهدف:", rep_from:"من تاريخ:", rep_to:"إلى تاريخ:", btn_search:"بحث 🔍", btn_excel:"إكسيل 📊", btn_print:"طباعة 🖨️", opt_client:"تقرير عميل", opt_driver:"تقرير شريك", opt_trip:"تقرير مشوار", opt_fin:"التقرير المالي", opt_mnt:"تقرير الصيانة", opt_net_profit: "تقرير صافي الربح 💰", th_num:"#", th_desc:"البيان / المشوار", th_tot:"الإجمالي" }
     };
+
+    function updateOnlineStatus() {
+        const badge = document.getElementById('networkStatus');
+        if(!badge) return;
+        
+        if(isSyncing) {
+            badge.className = 'network-badge network-sync';
+            badge.innerHTML = '🔄 Syncing...';
+            return;
+        }
+
+        if(navigator.onLine) {
+            badge.className = 'network-badge network-online';
+            badge.innerHTML = '🟢 Online';
+            if(syncQueue.length > 0) processSyncQueue();
+        } else {
+            badge.className = 'network-badge network-offline';
+            badge.innerHTML = '🔴 Offline';
+        }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    setInterval(updateOnlineStatus, 5000);
 
     function toggleLang() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
@@ -451,24 +492,20 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         return prefix + "-" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000); 
     }
     
-    function updateOnlineStatus() {
-        fetch("https://www.google.com/favicon.ico?t=" + new Date().getTime(), { mode: 'no-cors', cache: 'no-store' })
-        .then(() => {
-            const badge = document.getElementById('networkStatus');
-            if(badge.innerHTML !== '🟢 Online' && !isSyncing) {
-                badge.className = 'network-badge network-online';
-                badge.innerHTML = '🟢 Online';
+    function forceAppSync() {
+        fetch(GOOGLE_SCRIPT_URL + "?action=getInitialData")
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                localStorage.setItem('fleet_data_cache', JSON.stringify(data));
+                loadDataToUI(data); 
                 processSyncQueue();
+                toast('🟢 Data Refreshed Live!', 'success');
             }
-        })
-        .catch(() => {
-            const badge = document.getElementById('networkStatus');
-            badge.className = 'network-badge network-offline';
-            badge.innerHTML = '🔴 Offline';
+        }).catch(err => {
+            toast('🔴 Network Error - Working Offline', 'error');
         });
     }
-    
-    setInterval(updateOnlineStatus, 3000);
 
     window.addEventListener('load', () => {
         document.documentElement.dir = 'ltr';
@@ -506,21 +543,6 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         
         forceAppSync();
     });
-
-    function forceAppSync() {
-        fetch(GOOGLE_SCRIPT_URL + "?action=getInitialData")
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                localStorage.setItem('fleet_data_cache', JSON.stringify(data));
-                loadDataToUI(data); 
-                processSyncQueue();
-                toast('🟢 Data Refreshed Live!', 'success');
-            }
-        }).catch(err => {
-            console.log("Fetch Error:", err);
-        });
-    }
 
     function login() {
         const u = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -568,22 +590,45 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         renderRecentTrips(); renderFinances(); renderMaintenance();
     }
 
+    // الدالة السحرية للمزامنة باستخدام text/plain لتفادي الـ CORS
     function processSyncQueue() {
-        if (isSyncing || syncQueue.length === 0) return;
+        if (isSyncing || syncQueue.length === 0) {
+            updateOnlineStatus();
+            return;
+        }
+        if (!navigator.onLine) {
+            updateOnlineStatus();
+            return;
+        }
+
         isSyncing = true; 
-        
-        const badge = document.getElementById('networkStatus');
-        badge.className = 'network-badge network-sync';
-        badge.innerHTML = '🔄 Syncing...';
+        updateOnlineStatus();
 
         const payload = syncQueue[0];
-        fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        .then(() => { 
-            syncQueue.shift(); 
-            localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); 
-            isSyncing = false; 
-            updateOnlineStatus(); 
-            processSyncQueue(); 
+        
+        fetch(GOOGLE_SCRIPT_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+            body: JSON.stringify(payload) 
+        })
+        .then(res => res.json())
+        .then(data => { 
+            if(data.status === 'success') {
+                syncQueue.shift(); 
+                localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); 
+                isSyncing = false; 
+                
+                // إظهار رسالة الإتمام
+                if (payload.record_type === "edit_trip" || payload.record_type === "edit_finance") {
+                    toast('✅ تمت المزامنة وتم التعديل بنجاح', 'success');
+                } else if (payload.record_type === "trip" || payload.record_type === "finance" || payload.record_type === "maintenance") {
+                    toast('✅ تمت المزامنة وتم الحفظ بنجاح', 'success');
+                }
+                
+                processSyncQueue(); 
+            } else {
+                throw new Error("Server error");
+            }
         })
         .catch(() => { 
             isSyncing = false; 
@@ -667,8 +712,8 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
             driver_fee: fee 
         });
 
+        toast(editingTripId ? "💾 تم التعديل محلياً... جاري المزامنة" : "💾 تم الحفظ محلياً... جاري المزامنة", "info");
         clearForm();
-        toast(`✅ Saved (${targetId})!`, 'success');
     }
 
     function formatDateDisplay(rawDate) {
@@ -707,6 +752,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         document.getElementById('revEGP').value = t.revenue || 0; 
         document.getElementById('tripDriverFee').value = t.fee || 0; 
         document.getElementById('tripNotes').value = t.notes || '';
+        document.getElementById('formTripTitle').innerText = '📝 Edit Trip (' + t.id + ')';
         calcTotals(); 
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
@@ -729,6 +775,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         document.getElementById('tripDriverFee').value='0'; 
         document.getElementById('tripNotes').value=''; 
         document.getElementById('tripDate').value = getCurrentLocalDateTime(); 
+        document.getElementById('formTripTitle').innerText = '📝 Add New Trip';
         calcTotals(); 
     }
 
@@ -775,7 +822,6 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); toast('Deleted');
     }
 
-    // ================== EDIT FINANCE IMPLEMENTATION ==================
     function renderFinances() {
         const tbody = document.querySelector('#financeTable tbody'); 
         if(!tbody) return; 
@@ -845,7 +891,6 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         document.getElementById('finDate').value = getCurrentLocalDateTime();
     }
 
-    // ================== USERS MANAGEMENT ==================
     function changeMyPassword() {
         const p1 = document.getElementById('chgNewPass').value.trim();
         const p2 = document.getElementById('chgConfPass').value.trim();
