@@ -26,7 +26,7 @@
         .app-container { max-width: 1200px; margin: 20px auto; background: transparent; padding: 0 15px; min-height: 90vh; padding-bottom: 80px; }
         .header-bar { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px; }
         
-        .network-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-top: 5px; cursor: pointer; }
+        .network-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .network-online { background: #eafaf1; color: #27ae60; border: 1px solid #27ae60; }
         .network-sync { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .network-offline { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
@@ -66,7 +66,7 @@
         .scroll-btn { width: 45px; height: 45px; border-radius: 50%; background: #f39c12; color: white; border: 2px solid #fff; font-size: 1.2rem; cursor: pointer; opacity: 0.85; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
 
         #toastStack { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 999999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
-        .toast { color: white; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .toast { color: white; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: 0.3s; }
         
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #eee; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; background: #fff; text-align: center; white-space: nowrap; font-size: 0.85rem; }
@@ -129,8 +129,6 @@
         </div>
     </div>
 
-    <!-- Dashboard Removed based on user request -->
-
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="showTab('addTripTab', this)" data-tr="tab_add">📝 Add Trip</button>
         <button class="tab-btn admin-only" onclick="showTab('mastersTab', this)" data-tr="tab_masters">⚙️ Masters</button>
@@ -143,10 +141,10 @@
     <div id="addTripTab" class="tab-content active">
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f39c12; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 class="section-title" data-tr="add_title">📝 Add / Edit Trip</h2>
+                <h2 class="section-title" id="formTripTitle" data-tr="add_title">📝 Add New Trip</h2>
                 <div style="display: flex; gap: 5px;">
-                    <button class="btn btn-green" style="padding: 5px 10px;" onclick="clearForm()">🆕</button>
-                    <button class="btn btn-gray" style="padding: 5px 10px;" onclick="clearForm()">🧹</button>
+                    <button class="btn btn-green" style="padding: 5px 10px;" onclick="clearForm()" title="New Trip">🆕</button>
+                    <button class="btn btn-gray" style="padding: 5px 10px;" onclick="clearForm()" title="Clear">🧹</button>
                 </div>
             </div>
 
@@ -317,8 +315,6 @@
                         <option value="driver" data-tr="opt_driver">Partner Report</option>
                         <option value="trip_detailed" data-tr="opt_trip">Trip Report</option>
                         <option value="trips" data-tr="opt_analysis">Trips Analysis Chart</option>
-                        <option value="clients_agg" data-tr="opt_c_agg">Clients Aggregated</option>
-                        <option value="partners_agg" data-tr="opt_p_agg">Partners Aggregated</option>
                         <option value="finance" data-tr="opt_fin">Finance Report</option>
                         <option value="maintenance" data-tr="opt_mnt">Maintenance Report</option>
                     </select>
@@ -330,7 +326,6 @@
             
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button id="searchBtn" class="btn btn-blue" style="flex:2;" onclick="fetchReports()" data-tr="btn_search">Search 🔍</button>
-                <button class="btn btn-green" style="flex:1;" onclick="exportToExcel()">Excel 📊</button>
                 <button class="btn btn-red" style="flex:1;" onclick="exportToPDF()" data-tr="btn_print">Print/PDF 📄</button>
             </div>
             
@@ -348,22 +343,39 @@
 </div>
 
 <script>
-    // الرابط الدقيق بناءً على طلبك
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZIhgfY0TiioihvR34rGMpDSlOUMv1rft37aBxH5_JJp0NhVtI5wYHg/exec"; 
     
     let loggedInUser = ''; let userRole = '';
     let usersDB = [], clientsDB = [], driversDB = [], tripsDB = []; 
     let recentTripsDB = [], financesDB = [], maintenanceDB = [];
-    let editingTripId = null, editingFinanceId = null, editingMaintenanceId = null;
+    let editingTripId = null;
     let syncQueue = JSON.parse(localStorage.getItem('fleet_sync_queue') || '[]');
-    let isSyncing = false; let reportChartInstance = null;
+    let isSyncing = false;
     let editingMasterIndex = { client: -1, driver: -1, trip: -1 };
 
     let currentLang = 'en';
     const dict = {
-        'en': { username:"Username:", password:"Password:", logout:"Logout", dash_rev:"Monthly Profit (EGP)", dash_trips:"Monthly Trips", dash_top:"Top Partner", tab_add:"📝 Add Trip", tab_masters:"⚙️ Masters", tab_fin:"💵 Finance", tab_mnt:"🔧 Maintenance", tab_rep:"📊 Reports", add_title:"📝 Add / Edit Trip", client:"Client:", driver:"Partner:", vehicle:"Vehicle Type:", v_limo:"Limousine", v_micro:"Microbus", v_coaster:"Coaster", v_bus:"Bus", trip:"Trip Name:", date:"Date & Time:", notes:"Notes:", rev_client:"💰 Revenue (Client):", fee_driver:"💵 Partner Fee:", net:"Net Commission:", save_trip:"Save Trip 💾", recent_trips:"🕒 Recent Trips", rev:"Rev", fee:"Fee", lbl_clients:"👥 Clients List", lbl_partners:"🤝 Partners & Phones", rep_type:"Type", rep_cat:"Category", rep_amt:"Amount", rep_loc:"Location", rep_odo:"Odometer", rep_type_select:"Report Type:", target:"Target:", rep_from:"From Date:", rep_to:"To Date:", btn_search:"Search 🔍", btn_print:"Print/PDF 📄", opt_client:"Client Report", opt_driver:"Partner Report", opt_trip:"Trip Report", opt_analysis:"Trips Analysis Chart", opt_c_agg:"Clients Aggregated", opt_p_agg:"Partners Aggregated", opt_fin:"Finance Report", opt_mnt:"Maintenance Report", th_num:"#", th_desc:"Description / Trip", th_tot:"Total Balance" },
-        'ar': { username:"اسم المستخدم:", password:"كلمة المرور:", logout:"خروج", dash_rev:"أرباح الشهر (EGP)", dash_trips:"عدد مشاوير الشهر", dash_top:"نجم الشهر (شريك)", tab_add:"📝 إضافة مشوار", tab_masters:"⚙️ الإعدادات", tab_fin:"💵 المالية", tab_mnt:"🔧 الصيانة", tab_rep:"📊 التقارير", add_title:"📝 إضافة مشوار جديد", client:"العميل:", driver:"الشريك (السائق):", vehicle:"نوع السيارة:", v_limo:"ليموزين / ملاكي", v_micro:"ميكروباص", v_coaster:"كوستر / ميني باص", v_bus:"أتوبيس", trip:"اسم المشوار:", date:"التاريخ والوقت:", notes:"ملاحظات:", rev_client:"💰 حساب العميل (EGP):", fee_driver:"💵 حساب الشريك (EGP):", net:"صافي العمولة:", save_trip:"حفظ المشوار 💾", recent_trips:"🕒 أحدث المشاوير", rev:"حساب", fee:"شريك", lbl_clients:"👥 قائمة العملاء", lbl_partners:"🤝 الشركاء والهواتف", rep_type:"النوع", rep_cat:"التصنيف", rep_amt:"المبلغ", rep_loc:"المكان", rep_odo:"العداد", rep_type_select:"نوع التقرير:", target:"الهدف:", rep_from:"من تاريخ:", rep_to:"إلى تاريخ:", btn_search:"بحث 🔍", btn_print:"طباعة/PDF 📄", opt_client:"تقرير عميل", opt_driver:"تقرير شريك", opt_trip:"تقرير مشوار", opt_analysis:"تحليل المشاوير", opt_c_agg:"إجمالي العملاء", opt_p_agg:"إجمالي الشركاء", opt_fin:"التقرير المالي", opt_mnt:"تقرير الصيانة", th_num:"#", th_desc:"البيان / المشوار", th_tot:"الإجمالي" }
+        'en': { username:"Username:", password:"Password:", logout:"Logout", tab_add:"📝 Add Trip", tab_masters:"⚙️ Masters", tab_fin:"💵 Finance", tab_mnt:"🔧 Maintenance", tab_rep:"📊 Reports", add_title:"📝 Add / Edit Trip", client:"Client:", driver:"Partner:", vehicle:"Vehicle Type:", v_limo:"Limousine", v_micro:"Microbus", v_coaster:"Coaster", v_bus:"Bus", trip:"Trip Name:", date:"Date & Time:", notes:"Notes:", rev_client:"💰 Revenue (Client):", fee_driver:"💵 Partner Fee:", net:"Net Commission:", save_trip:"Save Trip 💾", recent_trips:"🕒 Recent Trips", rev:"Rev", fee:"Fee", lbl_clients:"👥 Clients List", lbl_partners:"🤝 Partners & Phones", rep_type:"Type", rep_cat:"Category", rep_amt:"Amount", rep_loc:"Location", rep_odo:"Odometer", rep_type_select:"Report Type:", target:"Target:", rep_from:"From Date:", rep_to:"To Date:", btn_search:"Search 🔍", btn_print:"Print/PDF 📄", opt_client:"Client Report", opt_driver:"Partner Report", opt_trip:"Trip Report", opt_analysis:"Trips Analysis Chart", opt_fin:"Finance Report", opt_mnt:"Maintenance Report", th_num:"#", th_desc:"Description / Trip", th_tot:"Total Balance" },
+        'ar': { username:"اسم المستخدم:", password:"كلمة المرور:", logout:"خروج", tab_add:"📝 إضافة مشوار", tab_masters:"⚙️ الإعدادات", tab_fin:"💵 المالية", tab_mnt:"🔧 الصيانة", tab_rep:"📊 التقارير", add_title:"📝 إضافة / تعديل مشوار", client:"العميل:", driver:"الشريك (السائق):", vehicle:"نوع السيارة:", v_limo:"ليموزين / ملاكي", v_micro:"ميكروباص", v_coaster:"كوستر / ميني باص", v_bus:"أتوبيس", trip:"اسم المشوار:", date:"التاريخ والوقت:", notes:"ملاحظات:", rev_client:"💰 حساب العميل (EGP):", fee_driver:"💵 حساب الشريك (EGP):", net:"صافي العمولة:", save_trip:"حفظ المشوار 💾", recent_trips:"🕒 أحدث المشاوير", rev:"حساب", fee:"شريك", lbl_clients:"👥 قائمة العملاء", lbl_partners:"🤝 الشركاء والهواتف", rep_type:"النوع", rep_cat:"التصنيف", rep_amt:"المبلغ", rep_loc:"المكان", rep_odo:"العداد", rep_type_select:"نوع التقرير:", target:"الهدف:", rep_from:"من تاريخ:", rep_to:"إلى تاريخ:", btn_search:"بحث 🔍", btn_print:"طباعة/PDF 📄", opt_client:"تقرير عميل", opt_driver:"تقرير شريك", opt_trip:"تقرير مشوار", opt_analysis:"تحليل المشاوير", opt_fin:"التقرير المالي", opt_mnt:"تقرير الصيانة", th_num:"#", th_desc:"البيان / المشوار", th_tot:"الإجمالي" }
     };
+
+    function updateNetworkBadge() {
+        const badge = document.getElementById('networkStatus');
+        if (!badge) return;
+        if (isSyncing) {
+            badge.className = 'network-badge network-sync';
+            badge.innerHTML = '🔄 Syncing...';
+        } else if (navigator.onLine) {
+            badge.className = 'network-badge network-online';
+            badge.innerHTML = '🟢 Online';
+        } else {
+            badge.className = 'network-badge network-offline';
+            badge.innerHTML = '🔴 Offline';
+        }
+    }
+
+    window.addEventListener('online', () => { updateNetworkBadge(); processSyncQueue(); });
+    window.addEventListener('offline', () => { updateNetworkBadge(); });
 
     function toggleLang() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
@@ -383,14 +395,22 @@
     function getCurrentLocalDateTime() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); }
     function generateID(prefix) { return prefix + "-" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000); }
     
-    function forceAppSync() { localStorage.removeItem('fleet_data_cache'); location.reload(); }
+    function forceAppSync() { 
+        localStorage.removeItem('fleet_data_cache'); 
+        location.reload(); 
+    }
+
+    function saveLocalCache() {
+        localStorage.setItem('fleet_data_cache', JSON.stringify({
+            status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, 
+            trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB
+        }));
+    }
 
     window.addEventListener('load', () => {
         document.documentElement.dir = 'ltr';
         document.documentElement.lang = 'en';
-
-        // إلغاء الكاش القديم عند بدء التشغيل لضمان تحميل البيانات الجديدة
-        localStorage.removeItem('fleet_data_cache');
+        updateNetworkBadge();
 
         const session = localStorage.getItem('samy_logged_in_user');
         setTimeout(() => {
@@ -417,18 +437,23 @@
         document.getElementById('repFrom').value = firstDay.toISOString().slice(0, 10);
         document.getElementById('repTo').value = new Date().toISOString().slice(0, 10);
 
-        usersDB = [{username: "SAMY", password: "852", role: "Admin"}];
+        let cached = localStorage.getItem('fleet_data_cache');
+        if (cached) { try { loadDataToUI(JSON.parse(cached)); } catch(e) { localStorage.removeItem('fleet_data_cache'); } } 
+        else { usersDB = [{username: "SAMY", password: "852", role: "Admin"}]; }
         
-        fetch(GOOGLE_SCRIPT_URL + "?action=getInitialData").then(res => res.json()).then(data => {
-            if (data.status === 'success') {
-                localStorage.setItem('fleet_data_cache', JSON.stringify(data));
-                loadDataToUI(data); processSyncQueue();
-            }
-        }).catch(err => console.log("Offline Mode"));
+        if (navigator.onLine) {
+            fetch(GOOGLE_SCRIPT_URL + "?action=getInitialData")
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadDataToUI(data); 
+                    saveLocalCache();
+                    processSyncQueue();
+                }
+            })
+            .catch(err => console.log("Working in Offline Cache Mode"));
+        }
     });
-
-    window.addEventListener('online', processSyncQueue);
-    setInterval(processSyncQueue, 15000);
 
     function login() {
         const u = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -469,13 +494,55 @@
         renderRecentTrips(); renderFinances(); renderMaintenance();
     }
 
+    function addToSyncQueue(item) {
+        syncQueue.push(item);
+        localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue));
+        processSyncQueue();
+    }
+
     function processSyncQueue() {
-        if (isSyncing || syncQueue.length === 0) { if(navigator.onLine && syncQueue.length===0) document.getElementById('networkStatus').innerHTML = '🟢 Online'; return; }
-        if (!navigator.onLine) { document.getElementById('networkStatus').innerHTML = '🔴 Offline'; return; }
-        isSyncing = true; document.getElementById('networkStatus').innerHTML = '🔄 Syncing...';
-        fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(syncQueue[0]) })
-        .then(() => { syncQueue.shift(); localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); isSyncing = false; processSyncQueue(); })
-        .catch(() => { isSyncing = false; document.getElementById('networkStatus').innerHTML = '🔴 Offline';});
+        if (isSyncing || syncQueue.length === 0) { 
+            updateNetworkBadge(); 
+            return; 
+        }
+        if (!navigator.onLine) { 
+            updateNetworkBadge(); 
+            return; 
+        }
+
+        isSyncing = true; 
+        updateNetworkBadge();
+
+        fetch(GOOGLE_SCRIPT_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+            body: JSON.stringify(syncQueue[0]) 
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                const finishedAction = syncQueue.shift(); 
+                localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); 
+                isSyncing = false; 
+                updateNetworkBadge();
+                
+                // إظهار الرسالة المطلوبة
+                if (finishedAction.record_type === "edit_trip") {
+                    toast('✅ تمت المزامنة وتم التعديل بنجاح', 'success');
+                } else {
+                    toast('✅ تمت المزامنة بنجاح', 'success');
+                }
+                
+                processSyncQueue();
+            } else {
+                isSyncing = false;
+                updateNetworkBadge();
+            }
+        })
+        .catch(err => { 
+            isSyncing = false; 
+            updateNetworkBadge();
+        });
     }
 
     // ================= Trip Logic =================
@@ -522,18 +589,37 @@
             addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB });
         }
 
+        const isEditing = !!editingTripId;
         const targetId = editingTripId || generateID("TRIP");
         const tripObj = { id: targetId, date: tDate, client: client, driver: driverName, vehicle: vType, trip: tripName, revenue: rev, fee: fee, notes: notes };
 
-        if (editingTripId) { const idx = recentTripsDB.findIndex(t => t.id === editingTripId); if(idx > -1) recentTripsDB[idx] = tripObj; } 
-        else { recentTripsDB.push(tripObj); }
+        if (isEditing) { 
+            const idx = recentTripsDB.findIndex(t => String(t.id).trim().toLowerCase() === String(editingTripId).trim().toLowerCase()); 
+            if(idx > -1) recentTripsDB[idx] = tripObj; 
+        } else { 
+            recentTripsDB.push(tripObj); 
+        }
         
         recentTripsDB.sort((a,b) => String(a.date).localeCompare(String(b.date)));
-        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB}));
+        saveLocalCache();
+        renderRecentTrips();
         
-        renderRecentTrips(); clearForm();
-        addToSyncQueue({ record_type: editingTripId ? "edit_trip" : "trip", trip_id: targetId, client_name: client, driver_name: driverName, vehicle_type: vType, trip_name: tripName, date: tDate, notes: notes, revenue: rev, driver_fee: fee });
-        toast(`✅ Saved!`, 'success');
+        const payloadType = isEditing ? "edit_trip" : "trip";
+        addToSyncQueue({ 
+            record_type: payloadType, 
+            trip_id: targetId, 
+            client_name: client, 
+            driver_name: driverName, 
+            vehicle_type: vType, 
+            trip_name: tripName, 
+            date: tDate, 
+            notes: notes, 
+            revenue: rev, 
+            driver_fee: fee 
+        });
+
+        toast(isEditing ? "💾 تم الحفظ محلياً... جاري رفع التعديل" : "💾 تم الحفظ محلياً", "info");
+        clearForm();
     }
 
     function renderRecentTrips() {
@@ -554,17 +640,44 @@
     }
 
     function loadTrip(idx) {
-        const t = recentTripsDB[idx]; editingTripId = t.id;
+        const t = recentTripsDB[idx]; 
+        editingTripId = t.id;
         document.getElementById('tripDate').value = t.date.replace(' ', 'T').slice(0,16);
-        document.getElementById('tripClientSelect').value = t.client; document.getElementById('tripDriverSelect').value = t.driver;
-        document.getElementById('tripVehicleType').value = t.vehicle || 'Limousine'; document.getElementById('tripNameSelect').value = t.trip;
-        document.getElementById('revEGP').value = t.revenue; document.getElementById('tripDriverFee').value = t.fee; document.getElementById('tripNotes').value = t.notes;
-        calcTotals(); window.scrollTo({top: 0});
+        document.getElementById('tripClientSelect').value = t.client; 
+        document.getElementById('tripDriverSelect').value = t.driver;
+        document.getElementById('tripVehicleType').value = t.vehicle || 'Limousine'; 
+        document.getElementById('tripNameSelect').value = t.trip;
+        document.getElementById('revEGP').value = t.revenue; 
+        document.getElementById('tripDriverFee').value = t.fee; 
+        document.getElementById('tripNotes').value = t.notes || '';
+        document.getElementById('saveTripBtn').innerText = 'Update Trip ✏️';
+        document.getElementById('formTripTitle').innerText = '📝 Edit Trip (' + t.id + ')';
+        calcTotals(); 
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
+
     function delTrip(idx) { 
-        if(confirm('Delete?')) { addToSyncQueue({record_type:"delete_trip", trip_id: recentTripsDB[idx].id}); recentTripsDB.splice(idx,1); localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); renderRecentTrips(); } 
+        if(confirm('Delete?')) { 
+            addToSyncQueue({record_type:"delete_trip", trip_id: recentTripsDB[idx].id}); 
+            recentTripsDB.splice(idx,1); 
+            saveLocalCache(); 
+            renderRecentTrips(); 
+        } 
     }
-    function clearForm() { editingTripId = null; document.getElementById('tripClientSelect').value=''; document.getElementById('tripDriverSelect').value=''; document.getElementById('tripNameSelect').value=''; document.getElementById('revEGP').value='0'; document.getElementById('tripDriverFee').value='0'; document.getElementById('tripNotes').value=''; document.getElementById('tripDate').value = getCurrentLocalDateTime(); calcTotals(); }
+
+    function clearForm() { 
+        editingTripId = null; 
+        document.getElementById('tripClientSelect').value=''; 
+        document.getElementById('tripDriverSelect').value=''; 
+        document.getElementById('tripNameSelect').value=''; 
+        document.getElementById('revEGP').value='0'; 
+        document.getElementById('tripDriverFee').value='0'; 
+        document.getElementById('tripNotes').value=''; 
+        document.getElementById('tripDate').value = getCurrentLocalDateTime(); 
+        document.getElementById('saveTripBtn').innerText = 'Save Trip 💾';
+        document.getElementById('formTripTitle').innerText = '📝 Add New Trip';
+        calcTotals(); 
+    }
 
     // ================= Master Adds =================
     function loadMasterEdit(type, index) {
@@ -597,8 +710,9 @@
             document.querySelectorAll('#mastersTab input[type="number"]').forEach(i => i.value=''); document.getElementById('mTripName').value=''; editingMasterIndex.trip = -1;
         }
         loadDataToUI({users:usersDB, clients:clientsDB, drivers:driversDB, trips:tripsDB, recent:recentTripsDB, finances:financesDB, maintenance:maintenanceDB});
-        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); 
-        addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); toast('Saved!');
+        saveLocalCache(); 
+        addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); 
+        toast('Saved!');
     }
     function removeMasterItem(sheetName, name, idx) {
         if(!confirm('Delete?')) return;
@@ -606,8 +720,9 @@
         if(sheetName === 'Drivers') driversDB.splice(idx, 1);
         if(sheetName === 'Trip_Types') tripsDB.splice(idx, 1);
         loadDataToUI({users:usersDB, clients:clientsDB, drivers:driversDB, trips:tripsDB, recent:recentTripsDB, finances:financesDB, maintenance:maintenanceDB});
-        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); 
-        addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); toast('Deleted');
+        saveLocalCache(); 
+        addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); 
+        toast('Deleted');
     }
 
     function renderFinances() {
@@ -617,9 +732,9 @@
     function saveFinance() {
         const tDate = document.getElementById('finDate').value.replace('T', ' '); const tType = document.getElementById('finType').value; const cat = document.getElementById('finCategory').value; const amt = parseFloat(document.getElementById('finAmount').value); const notes = document.getElementById('finNotes').value;
         if(!amt || !cat) return; let targetId = generateID("FIN"); financesDB.push({ id: targetId, date: tDate, type: tType, category: cat, amount: amt, notes: notes });
-        financesDB.sort((a,b) => String(a.date).localeCompare(String(b.date))); renderFinances(); addToSyncQueue({ record_type: "finance", fin_id: targetId, fin_type: tType, category: cat, amount: amt, date: tDate, notes: notes, added_by: loggedInUser }); toast('Saved');
+        financesDB.sort((a,b) => String(a.date).localeCompare(String(b.date))); saveLocalCache(); renderFinances(); addToSyncQueue({ record_type: "finance", fin_id: targetId, fin_type: tType, category: cat, amount: amt, date: tDate, notes: notes, added_by: loggedInUser }); toast('Saved');
     }
-    function deleteFinance(i) { if(confirm('Del?')) { addToSyncQueue({record_type:"delete_finance", fin_id: financesDB[i].id}); financesDB.splice(i,1); renderFinances(); } }
+    function deleteFinance(i) { if(confirm('Del?')) { addToSyncQueue({record_type:"delete_finance", fin_id: financesDB[i].id}); financesDB.splice(i,1); saveLocalCache(); renderFinances(); } }
 
     function renderMaintenance() {
         const tbody = document.querySelector('#maintenanceTable tbody'); if(!tbody) return; if(maintenanceDB.length === 0) { tbody.innerHTML = '<tr><td colspan="8">No records</td></tr>'; return; }
@@ -628,9 +743,9 @@
     function saveMaintenance() {
         const mDate = document.getElementById('mntDate').value.replace('T', ' '); const type = document.getElementById('mntType').value; const amt = parseFloat(document.getElementById('mntAmount').value); const loc = document.getElementById('mntLocation').value; const odo = document.getElementById('mntOdometer').value; const notes = document.getElementById('mntNotes').value;
         if(!amt || !type) return; let targetId = generateID("MNT"); maintenanceDB.push({ id: targetId, date: mDate, type: type, amount: amt, location: loc, odometer: odo, notes: notes });
-        maintenanceDB.sort((a,b) => String(a.date).localeCompare(String(b.date))); renderMaintenance(); addToSyncQueue({ record_type: "maintenance", mnt_id: targetId, type: type, amount: amt, location: loc, odometer: odo, date: mDate, notes: notes, added_by: loggedInUser }); toast('Saved');
+        maintenanceDB.sort((a,b) => String(a.date).localeCompare(String(b.date))); saveLocalCache(); renderMaintenance(); addToSyncQueue({ record_type: "maintenance", mnt_id: targetId, type: type, amount: amt, location: loc, odometer: odo, date: mDate, notes: notes, added_by: loggedInUser }); toast('Saved');
     }
-    function deleteMaintenance(i) { if(confirm('Del?')) { addToSyncQueue({record_type:"delete_maintenance", mnt_id: maintenanceDB[i].id}); maintenanceDB.splice(i,1); renderMaintenance(); } }
+    function deleteMaintenance(i) { if(confirm('Del?')) { addToSyncQueue({record_type:"delete_maintenance", mnt_id: maintenanceDB[i].id}); maintenanceDB.splice(i,1); saveLocalCache(); renderMaintenance(); } }
 
     function exportToPDF() {
         const reportContent = document.getElementById('reportPrintArea').innerHTML;
@@ -655,9 +770,7 @@
         });
     }
 
-    function closePrintModal() {
-        document.getElementById('printModal').style.display = 'none';
-    }
+    function closePrintModal() { document.getElementById('printModal').style.display = 'none'; }
 
     function toast(msg, type='info') {
         const stack = document.getElementById('toastStack'); const el = document.createElement('div'); el.className = 'toast';
