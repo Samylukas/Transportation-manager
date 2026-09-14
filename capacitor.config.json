@@ -1,0 +1,6 @@
+{
+  "appId": "TM.app",
+  "appName": "Samy Fleet Pro",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
