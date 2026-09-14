@@ -448,7 +448,7 @@
                     processSyncQueue();
                 }
             })
-            .catch(err => console.log("Offline Mode - Local cache active"));
+            .catch(err => console.log("Offline Mode - Running on Cache"));
         }
     });
 
@@ -497,6 +497,7 @@
         processSyncQueue();
     }
 
+    // الدالة الأصلية المعتمدة مع no-cors لمنع حظر الطلبات من جوجل شيت
     function processSyncQueue() {
         if (isSyncing || syncQueue.length === 0) { 
             updateNetworkBadge(); 
@@ -510,30 +511,27 @@
         isSyncing = true; 
         updateNetworkBadge();
 
-        // إرسال POST بدون Custom Headers لتفادي حظر OPTIONS من جوجل
+        const currentItem = syncQueue[0];
+
         fetch(GOOGLE_SCRIPT_URL, { 
-            method: 'POST',
-            body: JSON.stringify(syncQueue[0]) 
+            method: 'POST', 
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(currentItem) 
         })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'success') {
-                const finishedAction = syncQueue.shift(); 
-                localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); 
-                isSyncing = false; 
-                updateNetworkBadge();
-                
-                if (finishedAction.record_type === "edit_trip") {
-                    toast('✅ تمت المزامنة وتم التعديل بنجاح', 'success');
-                } else {
-                    toast('✅ تمت المزامنة بنجاح', 'success');
-                }
-                
-                processSyncQueue();
+        .then(() => {
+            syncQueue.shift(); 
+            localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); 
+            isSyncing = false; 
+            updateNetworkBadge();
+            
+            if (currentItem.record_type === "edit_trip") {
+                toast('✅ تمت المزامنة وتم التعديل بنجاح', 'success');
             } else {
-                isSyncing = false;
-                updateNetworkBadge();
+                toast('✅ تمت المزامنة بنجاح', 'success');
             }
+            
+            processSyncQueue();
         })
         .catch(err => { 
             isSyncing = false; 
@@ -614,7 +612,7 @@
             driver_fee: fee 
         });
 
-        toast(isEditing ? "💾 تم الحفظ محلياً... جاري جلب المزامنة" : "💾 تم الحفظ محلياً", "info");
+        toast(isEditing ? "💾 تم الحفظ محلياً... جاري المزامنة" : "💾 تم الحفظ محلياً", "info");
         clearForm();
     }
 
