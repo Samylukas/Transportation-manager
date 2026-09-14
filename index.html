@@ -5,20 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Samy Fleet Pro 2026</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f4f7f6; color: #333; overflow-x: hidden; scroll-behavior: smooth; transition: 0.3s; }
+        body { background-color: #f4f7f6; color: #333; overflow-x: hidden; scroll-behavior: smooth; }
 
-        /* Splash Screen */
         #splashScreen { position: fixed; inset: 0; background: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 999999; color: #1e3c72; transition: opacity 0.5s ease, visibility 0.5s ease; }
         @keyframes driveForward { 0% { transform: scale(0.1) translateY(-100px); opacity: 0; } 80% { transform: scale(1.1) translateY(10px); opacity: 1; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
         .splash-logo { font-size: 5rem; margin-bottom: 10px; animation: driveForward 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
         .splash-title { font-size: 2.2rem; font-weight: bold; margin-bottom: 15px; }
 
-        /* Login Screen */
         #loginOverlay { position: fixed; inset: 0; background: linear-gradient(135deg, rgba(30,60,114,0.95), rgba(42,82,152,0.95)); display: flex; justify-content: center; align-items: center; z-index: 99999; transition: opacity 0.5s ease; visibility: hidden; opacity: 0; }
         .login-card { background: #ffffff; padding: 35px 25px; border-radius: 16px; text-align: center; width: 90%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .login-card h2 { color: #1e3c72; margin-bottom: 8px; font-size: 1.6rem; }
@@ -26,7 +22,7 @@
         .app-container { max-width: 1200px; margin: 20px auto; background: transparent; padding: 0 15px; min-height: 90vh; padding-bottom: 80px; }
         .header-bar { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px; }
         
-        .network-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .network-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 5px; cursor: pointer; transition: 0.3s; }
         .network-online { background: #eafaf1; color: #27ae60; border: 1px solid #27ae60; }
         .network-sync { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .network-offline { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
@@ -41,13 +37,15 @@
         .card { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); width: 100%; overflow: hidden; }
         .section-title { font-weight: bold; color: #1e3c72; font-size: 1.2rem; margin:0; }
         
-        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; width: 100%; }
         @media (max-width: 600px) { .grid-form { grid-template-columns: 1fr; } }
         
-        .form-group { display: flex; flex-direction: column; text-align: left; width: 100%; }
+        .large-inputs .form-group input, .large-inputs .form-group select { padding: 16px; font-size: 1.1rem; }
+
+        .form-group { display: flex; flex-direction: column; text-align: left; width: 100%; overflow: hidden; }
         html[dir="rtl"] .form-group { text-align: right; }
         .form-group label { font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #2c3e50; }
-        .form-group input, .form-group select { padding: 11px; border: 1px solid #dcdde1; border-radius: 8px; font-size: 0.95rem; outline: none; background: #f8f9fa; width: 100%; }
+        .form-group input, .form-group select { padding: 11px; border: 1px solid #dcdde1; border-radius: 8px; font-size: 0.95rem; outline: none; background: #f8f9fa; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .pass-wrapper { position: relative; width: 100%; }
         .pass-wrapper input { width: 100%; padding-right: 40px; }
@@ -55,18 +53,19 @@
         .pass-toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.1rem; }
         html[dir="rtl"] .pass-toggle-btn { right: auto; left: 10px; }
 
-        .btn { border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.9rem; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;}
-        .btn:disabled { background: #95a5a6; cursor: not-allowed; }
-        .btn-green { background: #27ae60; } .btn-blue { background: #1e3c72; } .btn-red { background: #e74c3c; } 
+        .btn { border: none; padding: 10px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-size: 0.9rem; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;}
+        .btn-green { background: #27ae60; } .btn-blue { background: #1e3c72; } .btn-red { background: #e74c3c; } .btn-purple { background: #8e44ad; } .btn-dark { background: #2c3e50; }
         .btn-whatsapp { background: #25D366; color: white; }
         .btn-gray { background: #7f8c8d; } .btn-outline { background: #fff; color: #1e3c72; border: 1px solid #1e3c72; }
+
+        .btn-grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 20px; width: 100%; }
 
         .scroll-btn-group { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
         html[dir="rtl"] .scroll-btn-group { right: auto; left: 20px; }
         .scroll-btn { width: 45px; height: 45px; border-radius: 50%; background: #f39c12; color: white; border: 2px solid #fff; font-size: 1.2rem; cursor: pointer; opacity: 0.85; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
 
         #toastStack { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 999999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
-        .toast { color: white; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: 0.3s; }
+        .toast { color: white; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #eee; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; background: #fff; text-align: center; white-space: nowrap; font-size: 0.85rem; }
@@ -80,22 +79,28 @@
 
         .report-print-container { background: #fff; padding: 10px; border-radius: 8px; width: 100%; overflow-x: auto; } 
         .report-title-header { text-align: center; color: #1e3c72; margin-bottom: 15px; font-size: 1.4rem; display: none; border-bottom: 3px solid #f39c12; padding-bottom: 8px; font-weight: bold; }
-        #chartContainer { max-width: 100%; margin: 15px auto; height: 300px; display: none; }
 
-        #printModal { position: fixed; inset: 0; background: #fff; z-index: 9999999; display: none; flex-direction: column; padding: 15px; overflow-y: auto; }
-        .print-modal-bar { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; background: #1e3c72; padding: 10px; border-radius: 8px; }
+        .net-profit-card { background: #1e3c72; color: white; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .net-profit-card h2 { font-size: 2rem; margin: 10px 0; color: #f1c40f; }
+
+        @media print {
+            body * { visibility: hidden !important; }
+            #reportPrintArea, #reportPrintArea * { visibility: visible !important; }
+            #reportPrintArea { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .scroll-btn-group, .nav-tabs, .header-bar, .action-buttons, .grid-form, #toastStack, .btn-grid-container { display: none !important; }
+            #reportPrintArea table { width: 100% !important; border-collapse: collapse !important; margin-top: 15px; font-size: 11pt; }
+            #reportPrintArea th { background-color: #1e3c72 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 10px; border: 1.5px solid #1e3c72 !important; font-weight: bold; }
+            #reportPrintArea td { padding: 8px; border: 1px solid #333 !important; text-align: center; color: #000; font-weight: 500; }
+            #reportPrintArea .total-row td { background-color: #f39c12 !important; color: white !important; font-weight: bold; font-size: 13pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .report-title-header { color: #1e3c72 !important; font-size: 16pt !important; text-align: center; margin-bottom: 15px; border-bottom: 3px solid #f39c12 !important; padding-bottom: 8px; display: block !important; }
+            .net-profit-card { border: 2px solid #1e3c72 !important; background: #fff !important; color: #000 !important; }
+            .net-profit-card h2 { color: #000 !important; font-weight: bold; }
+            @page { margin: 1cm; size: A4 portrait; }
+        }
     </style>
 </head>
 <body>
 <div id="toastStack"></div>
-
-<div id="printModal">
-    <div class="print-modal-bar">
-        <button class="btn btn-green" onclick="downloadModalAsImage()">💾 Save Report / حفظ التقرير</button>
-        <button class="btn btn-red" onclick="closePrintModal()">❌ Close / إغلاق</button>
-    </div>
-    <div id="printModalContent" style="width:100%; background:#fff; padding:15px;"></div>
-</div>
 
 <div class="scroll-btn-group">
     <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">⏫</button>
@@ -105,7 +110,6 @@
 <div id="splashScreen">
     <div class="splash-logo">🚘</div>
     <div class="splash-title">Samy Fleet Pro</div>
-    <div class="spinner"></div>
 </div>
 
 <div id="loginOverlay">
@@ -135,13 +139,14 @@
         <button class="tab-btn admin-only" onclick="showTab('financeTab', this)" data-tr="tab_fin">💵 Finance</button>
         <button class="tab-btn admin-only" onclick="showTab('maintenanceTab', this)" data-tr="tab_mnt">🔧 Maintenance</button>
         <button class="tab-btn admin-only" onclick="showTab('reportsTab', this)" data-tr="tab_rep">📊 Reports</button>
+        <button class="tab-btn" onclick="showTab('usersTab', this)" data-tr="tab_users">🔐 Users</button>
     </div>
 
     <!-- Tab 1: Add Trip -->
     <div id="addTripTab" class="tab-content active">
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f39c12; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 class="section-title" id="formTripTitle" data-tr="add_title">📝 Add New Trip</h2>
+                <h2 class="section-title" data-tr="add_title">📝 Add New Trip</h2>
                 <div style="display: flex; gap: 5px;">
                     <button class="btn btn-green" style="padding: 5px 10px;" onclick="clearForm()">🆕</button>
                     <button class="btn btn-gray" style="padding: 5px 10px;" onclick="clearForm()">🧹</button>
@@ -200,7 +205,6 @@
         <div class="card">
             <h2 class="section-title" data-tr="tab_masters">⚙️ Master Data Management</h2>
             <div class="master-grid">
-                <!-- Clients -->
                 <div class="master-card">
                     <h3 data-tr="lbl_clients">👥 Clients</h3>
                     <div style="display:flex; gap:8px; margin-bottom:10px;">
@@ -212,7 +216,6 @@
                     </div>
                 </div>
 
-                <!-- Partners -->
                 <div class="master-card">
                     <h3 data-tr="lbl_partners">🤝 Partners & Phones</h3>
                     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
@@ -225,7 +228,6 @@
                     </div>
                 </div>
 
-                <!-- Pricing -->
                 <div class="master-card" style="grid-column: 1 / -1;">
                     <h3 style="color:#27ae60;">🗺️ Add / Edit Trip Pricing</h3>
                     <div class="grid-form" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
@@ -252,16 +254,16 @@
     <div id="financeTab" class="tab-content admin-only">
         <div class="card">
             <h2 class="section-title" data-tr="tab_fin">💵 General Finance</h2>
-            <div class="grid-form">
+            <div class="grid-form large-inputs" style="grid-template-columns: 1fr;">
                 <div class="form-group"><label data-tr="rep_type">Type:</label><select id="finType"><option value="Expense" style="color:red;">Expense</option><option value="Revenue" style="color:green;">Revenue</option></select></div>
-                <div class="form-group"><label data-tr="rep_cat">Category:</label><input type="text" id="finCategory"></div>
-                <div class="form-group"><label data-tr="rep_amt">Amount (EGP):</label><input type="number" id="finAmount"></div>
+                <div class="form-group"><label data-tr="rep_cat">Category / Item:</label><input type="text" id="finCategory" placeholder="e.g. Office Supplies..."></div>
+                <div class="form-group"><label data-tr="rep_amt">Amount (EGP):</label><input type="number" id="finAmount" placeholder="0.00"></div>
                 <div class="form-group"><label data-tr="date">Date & Time:</label><input type="datetime-local" id="finDate"></div>
-                <div class="form-group" style="grid-column: span 2;"><label data-tr="notes">Notes:</label><input type="text" id="finNotes"></div>
+                <div class="form-group"><label data-tr="notes">Notes:</label><input type="text" id="finNotes"></div>
             </div>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-gray" style="flex:1;" onclick="clearFinanceForm()">Clear 🧹</button>
-                <button id="saveFinanceBtn" class="btn btn-blue" style="flex:3;" onclick="saveFinance()">Save</button>
+                <button class="btn btn-gray" style="flex:1; padding: 15px; font-size: 1.1rem;" onclick="clearFinanceForm()">Clear 🧹</button>
+                <button id="saveFinanceBtn" class="btn btn-blue" style="flex:3; padding: 15px; font-size: 1.1rem;" onclick="saveFinance()">Save Finance 💾</button>
             </div>
         </div>
 
@@ -279,7 +281,7 @@
     <div id="maintenanceTab" class="tab-content admin-only">
         <div class="card">
             <h2 class="section-title" data-tr="tab_mnt">🔧 Car Maintenance</h2>
-            <div class="grid-form">
+            <div class="grid-form large-inputs" style="grid-template-columns: 1fr;">
                 <div class="form-group"><label data-tr="date">Date & Time:</label><input type="datetime-local" id="mntDate"></div>
                 <div class="form-group"><label data-tr="rep_type">Type / Category:</label><input type="text" id="mntType"></div>
                 <div class="form-group"><label data-tr="rep_amt">Amount (EGP):</label><input type="number" id="mntAmount"></div>
@@ -288,8 +290,8 @@
                 <div class="form-group"><label data-tr="notes">Notes:</label><input type="text" id="mntNotes"></div>
             </div>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-gray" style="flex:1;" onclick="clearMaintenanceForm()">Clear</button>
-                <button id="saveMaintenanceBtn" class="btn btn-blue" style="flex:3;" onclick="saveMaintenance()">Save</button>
+                <button class="btn btn-gray" style="flex:1; padding: 15px; font-size: 1.1rem;" onclick="clearMaintenanceForm()">Clear</button>
+                <button id="saveMaintenanceBtn" class="btn btn-blue" style="flex:3; padding: 15px; font-size: 1.1rem;" onclick="saveMaintenance()">Save</button>
             </div>
         </div>
 
@@ -314,9 +316,9 @@
                         <option value="client" data-tr="opt_client">Client Report</option>
                         <option value="driver" data-tr="opt_driver">Partner Report</option>
                         <option value="trip_detailed" data-tr="opt_trip">Trip Report</option>
-                        <option value="trips" data-tr="opt_analysis">Trips Analysis Chart</option>
                         <option value="finance" data-tr="opt_fin">Finance Report</option>
                         <option value="maintenance" data-tr="opt_mnt">Maintenance Report</option>
+                        <option value="net_profit" data-tr="opt_net_profit" style="font-weight:bold; color:#1e3c72;">Net Profit Summary 💰</option>
                     </select>
                 </div>
                 <div class="form-group" id="targetContainer"><label id="targetLabel" data-tr="target">Target:</label><select id="reportTarget"></select></div>
@@ -324,15 +326,66 @@
                 <div class="form-group"><label data-tr="rep_to">To Date:</label><input type="date" id="repTo"></div>
             </div>
             
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button id="searchBtn" class="btn btn-blue" style="flex:2;" onclick="fetchReports()" data-tr="btn_search">Search 🔍</button>
-                <button class="btn btn-red" style="flex:1;" onclick="exportToPDF()" data-tr="btn_print">Print/PDF 📄</button>
+            <div class="btn-grid-container">
+                <button id="searchBtn" class="btn btn-blue" onclick="fetchReports()" data-tr="btn_search">Search 🔍</button>
+                <button class="btn btn-green" onclick="exportToExcel()" data-tr="btn_excel">PC Excel 📊</button>
+                <button class="btn btn-dark" onclick="exportToWindowsPDF()" data-tr="btn_print">PC Print 🖨️</button>
+                <button class="btn btn-purple" onclick="openInBrowser()">🌐 Open in Chrome</button>
+                <button class="btn btn-whatsapp" onclick="shareReportText()">WhatsApp Text 💬</button>
             </div>
             
-            <div id="reportPrintArea" class="report-print-container" style="margin-top:20px;">
+            <div id="reportPrintArea" class="report-print-container" style="margin-top:20px; background:#fff; padding:15px;">
                 <h3 id="printReportTitle" class="report-title-header"></h3>
-                <div id="chartContainer"><canvas id="reportChart"></canvas></div>
                 <div class="table-responsive"><table id="reportsTable"><thead></thead><tbody></tbody></table></div>
+                <div id="netProfitSummary" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Users Management & Change Password -->
+    <div id="usersTab" class="tab-content">
+        <div class="card">
+            <h2 class="section-title">🔑 Change Password</h2>
+            <div class="grid-form" style="margin-top: 15px;">
+                <div class="form-group">
+                    <label>New Password:</label>
+                    <input type="password" id="chgNewPass" placeholder="Enter new password...">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password:</label>
+                    <input type="password" id="chgConfPass" placeholder="Confirm new password...">
+                </div>
+            </div>
+            <button class="btn btn-blue" style="margin-top: 15px; width: 100%;" onclick="changeMyPassword()">Update Password 🔑</button>
+        </div>
+
+        <div class="card admin-only">
+            <h2 class="section-title">👤 Users & Roles Management</h2>
+            <div class="grid-form" style="margin-top: 15px;">
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="newUsername" placeholder="e.g. Ahmed...">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="newUserPass" placeholder="Password...">
+                </div>
+                <div class="form-group">
+                    <label>Role (Role Access):</label>
+                    <select id="newUserRole">
+                        <option value="Admin">Admin (Full Access - أدمن صلاحيات كاملة)</option>
+                        <option value="User">User (Trips Only - مستخدم إضافة مشاوير فقط)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-green" style="margin-top: 15px; width: 100%;" onclick="createNewUser()">Create User ➕</button>
+
+            <h3 style="color:#1e3c72; border-bottom: 2px solid #f39c12; padding-bottom:5px; margin-top: 25px;">👥 Active System Users</h3>
+            <div class="table-responsive">
+                <table id="usersTable" style="width:100%;">
+                    <thead><tr><th>#</th><th>Username</th><th>Role</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -343,40 +396,21 @@
 </div>
 
 <script>
-    // الرابط المباشر الصحيح من لقطة الشاشة بدون أي حروف مكتوبة خطأ
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZIhgfY0TiioihvR34rGMpDSIOUMv1rft37aBxH5_JJp0NhVtl5wYHg/exec"; 
-    
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZIhgfY0TiioihvR34rGMpDSIOUMv1rft37aBxH5_JJp0NhVtl5wYHg/exec";    
     let loggedInUser = ''; let userRole = '';
-    let usersDB = [], clientsDB = [], driversDB = [], tripsDB = []; 
+    let usersDB = [], clientsDB = [], driversDB = []; tripsDB = []; 
     let recentTripsDB = [], financesDB = [], maintenanceDB = [];
     let editingTripId = null;
+    let editingFinId = null;
     let syncQueue = JSON.parse(localStorage.getItem('fleet_sync_queue') || '[]');
     let isSyncing = false;
     let editingMasterIndex = { client: -1, driver: -1, trip: -1 };
 
     let currentLang = 'en';
     const dict = {
-        'en': { username:"Username:", password:"Password:", logout:"Logout", tab_add:"📝 Add Trip", tab_masters:"⚙️ Masters", tab_fin:"💵 Finance", tab_mnt:"🔧 Maintenance", tab_rep:"📊 Reports", add_title:"📝 Add / Edit Trip", client:"Client:", driver:"Partner:", vehicle:"Vehicle Type:", v_limo:"Limousine", v_micro:"Microbus", v_coaster:"Coaster", v_bus:"Bus", trip:"Trip Name:", date:"Date & Time:", notes:"Notes:", rev_client:"💰 Revenue (Client):", fee_driver:"💵 Partner Fee:", net:"Net Commission:", save_trip:"Save Trip 💾", recent_trips:"🕒 Recent Trips", rev:"Rev", fee:"Fee", lbl_clients:"👥 Clients List", lbl_partners:"🤝 Partners & Phones", rep_type:"Type", rep_cat:"Category", rep_amt:"Amount", rep_loc:"Location", rep_odo:"Odometer", rep_type_select:"Report Type:", target:"Target:", rep_from:"From Date:", rep_to:"To Date:", btn_search:"Search 🔍", btn_print:"Print/PDF 📄", opt_client:"Client Report", opt_driver:"Partner Report", opt_trip:"Trip Report", opt_analysis:"Trips Analysis Chart", opt_fin:"Finance Report", opt_mnt:"Maintenance Report", th_num:"#", th_desc:"Description / Trip", th_tot:"Total Balance" },
-        'ar': { username:"اسم المستخدم:", password:"كلمة المرور:", logout:"خروج", tab_add:"📝 إضافة مشوار", tab_masters:"⚙️ الإعدادات", tab_fin:"💵 المالية", tab_mnt:"🔧 الصيانة", tab_rep:"📊 التقارير", add_title:"📝 إضافة / تعديل مشوار", client:"العميل:", driver:"الشريك (السائق):", vehicle:"نوع السيارة:", v_limo:"ليموزين / ملاكي", v_micro:"ميكروباص", v_coaster:"كوستر / ميني باص", v_bus:"أتوبيس", trip:"اسم المشوار:", date:"التاريخ والوقت:", notes:"ملاحظات:", rev_client:"💰 حساب العميل (EGP):", fee_driver:"💵 حساب الشريك (EGP):", net:"صافي العمولة:", save_trip:"حفظ المشوار 💾", recent_trips:"🕒 أحدث المشاوير", rev:"حساب", fee:"شريك", lbl_clients:"👥 قائمة العملاء", lbl_partners:"🤝 الشركاء والهواتف", rep_type:"النوع", rep_cat:"التصنيف", rep_amt:"المبلغ", rep_loc:"المكان", rep_odo:"العداد", rep_type_select:"نوع التقرير:", target:"الهدف:", rep_from:"من تاريخ:", rep_to:"إلى تاريخ:", btn_search:"بحث 🔍", btn_print:"طباعة/PDF 📄", opt_client:"تقرير عميل", opt_driver:"تقرير شريك", opt_trip:"تقرير مشوار", opt_analysis:"تحليل المشاوير", opt_fin:"التقرير المالي", opt_mnt:"تقرير الصيانة", th_num:"#", th_desc:"البيان / المشوار", th_tot:"الإجمالي" }
+        'en': { username:"Username:", password:"Password:", logout:"Logout", dash_rev:"Monthly Profit (EGP)", dash_trips:"Monthly Trips", dash_top:"Top Partner", tab_add:"📝 Add Trip", tab_masters:"⚙️ Masters", tab_fin:"💵 Finance", tab_mnt:"🔧 Maintenance", tab_rep:"📊 Reports", tab_users:"🔐 Users", add_title:"📝 Add New Trip", client:"Client:", driver:"Partner:", vehicle:"Vehicle Type:", v_limo:"Limousine", v_micro:"Microbus", v_coaster:"Coaster", v_bus:"Bus", trip:"Trip Name:", date:"Date & Time:", notes:"Notes:", rev_client:"💰 Revenue (Client):", fee_driver:"💵 Partner Fee:", net:"Net Commission:", save_trip:"Save Trip 💾", recent_trips:"🕒 Recent Trips", rev:"Rev", fee:"Fee", lbl_clients:"👥 Clients List", lbl_partners:"🤝 Partners & Phones", rep_type:"Type", rep_cat:"Category", rep_amt:"Amount", rep_loc:"Location", rep_odo:"Odometer", rep_type_select:"Report Type:", target:"Target:", rep_from:"From Date:", rep_to:"To Date:", btn_search:"Search 🔍", btn_excel:"PC Excel 📊", btn_print:"PC Print 🖨️", opt_client:"Client Report", opt_driver:"Partner Report", opt_trip:"Trip Report", opt_fin:"Finance Report", opt_mnt:"Maintenance Report", opt_net_profit: "Net Profit Summary 💰", th_num:"#", th_desc:"Description", th_tot:"Total" },
+        'ar': { username:"اسم المستخدم:", password:"كلمة المرور:", logout:"خروج", dash_rev:"أرباح الشهر (EGP)", dash_trips:"عدد مشاوير الشهر", dash_top:"نجم الشهر (شريك)", tab_add:"📝 إضافة مشوار", tab_masters:"⚙️ الإعدادات", tab_fin:"💵 المالية", tab_mnt:"🔧 الصيانة", tab_rep:"📊 التقارير", tab_users:"🔐 الحسابات", add_title:"📝 إضافة مشوار جديد", client:"العميل:", driver:"الشريك (السائق):", vehicle:"نوع السيارة:", v_limo:"ليموزين / ملاكي", v_micro:"ميكروباص", v_coaster:"كوستر / ميني باص", v_bus:"أتوبيس", trip:"اسم المشوار:", date:"التاريخ والوقت:", notes:"ملاحظات:", rev_client:"💰 حساب العميل (EGP):", fee_driver:"💵 حساب الشريك (EGP):", net:"صافي العمولة:", save_trip:"حفظ المشوار 💾", recent_trips:"🕒 أحدث المشاوير", rev:"حساب", fee:"شريك", lbl_clients:"👥 قائمة العملاء", lbl_partners:"🤝 الشركاء والهواتف", rep_type:"النوع", rep_cat:"التصنيف / البند", rep_amt:"المبلغ", rep_loc:"المكان", rep_odo:"العداد", rep_type_select:"نوع التقرير:", target:"الهدف:", rep_from:"من تاريخ:", rep_to:"إلى تاريخ:", btn_search:"بحث 🔍", btn_excel:"إكسيل 📊", btn_print:"طباعة 🖨️", opt_client:"تقرير عميل", opt_driver:"تقرير شريك", opt_trip:"تقرير مشوار", opt_fin:"التقرير المالي", opt_mnt:"تقرير الصيانة", opt_net_profit: "تقرير صافي الربح 💰", th_num:"#", th_desc:"البيان / المشوار", th_tot:"الإجمالي" }
     };
-
-    function updateNetworkBadge() {
-        const badge = document.getElementById('networkStatus');
-        if (!badge) return;
-        if (isSyncing) {
-            badge.className = 'network-badge network-sync';
-            badge.innerHTML = '🔄 Syncing...';
-        } else if (navigator.onLine) {
-            badge.className = 'network-badge network-online';
-            badge.innerHTML = '🟢 Online';
-        } else {
-            badge.className = 'network-badge network-offline';
-            badge.innerHTML = '🔴 Offline';
-        }
-    }
-
-    window.addEventListener('online', () => { updateNetworkBadge(); processSyncQueue(); });
-    window.addEventListener('offline', () => { updateNetworkBadge(); });
 
     function toggleLang() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
@@ -393,22 +427,53 @@
         if(recentTripsDB.length > 0) renderRecentTrips();
     }
 
-    function getCurrentLocalDateTime() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); }
-    function generateID(prefix) { return prefix + "-" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000); }
-    
-    function forceAppSync() { localStorage.removeItem('fleet_data_cache'); location.reload(); }
-
-    function saveLocalCache() {
-        localStorage.setItem('fleet_data_cache', JSON.stringify({
-            status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, 
-            trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB
-        }));
+    function getCurrentLocalDateTime() { 
+        const now = new Date(); 
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); 
+        return now.toISOString().slice(0, 16); 
     }
+
+    function generateSequentialTripID() {
+        let maxNum = 0;
+        recentTripsDB.forEach(t => {
+            if(t.id && t.id.startsWith("TRIP-")) {
+                let numPart = parseInt(t.id.replace("TRIP-", ""), 10);
+                if(!isNaN(numPart) && numPart > maxNum) {
+                    maxNum = numPart;
+                }
+            }
+        });
+        let nextNum = maxNum + 1;
+        return "TRIP-" + String(nextNum).padStart(4, '0');
+    }
+
+    function generateID(prefix) { 
+        return prefix + "-" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000); 
+    }
+    
+    function updateOnlineStatus() {
+        fetch("https://www.google.com/favicon.ico?t=" + new Date().getTime(), { mode: 'no-cors', cache: 'no-store' })
+        .then(() => {
+            const badge = document.getElementById('networkStatus');
+            if(badge.innerHTML !== '🟢 Online' && !isSyncing) {
+                badge.className = 'network-badge network-online';
+                badge.innerHTML = '🟢 Online';
+                processSyncQueue();
+            }
+        })
+        .catch(() => {
+            const badge = document.getElementById('networkStatus');
+            badge.className = 'network-badge network-offline';
+            badge.innerHTML = '🔴 Offline';
+        });
+    }
+    
+    setInterval(updateOnlineStatus, 3000);
 
     window.addEventListener('load', () => {
         document.documentElement.dir = 'ltr';
         document.documentElement.lang = 'en';
-        updateNetworkBadge();
+        updateOnlineStatus();
 
         const session = localStorage.getItem('samy_logged_in_user');
         setTimeout(() => {
@@ -418,7 +483,7 @@
                 if (session) {
                     const u = JSON.parse(session); loggedInUser = u.username; userRole = u.role;
                     document.getElementById('mainApp').style.display = 'block';
-                    document.getElementById('userInfo').textContent = `👤 ${u.username}`;
+                    document.getElementById('userInfo').textContent = `👤 ${u.username} (${u.role})`;
                     document.querySelectorAll('.admin-only').forEach(el => el.style.display = (u.role === 'Admin') ? '' : 'none');
                 } else {
                     document.getElementById('loginOverlay').style.visibility = 'visible'; 
@@ -439,19 +504,23 @@
         if (cached) { try { loadDataToUI(JSON.parse(cached)); } catch(e) { localStorage.removeItem('fleet_data_cache'); } } 
         else { usersDB = [{username: "SAMY", password: "852", role: "Admin"}]; }
         
-        if (navigator.onLine) {
-            fetch(GOOGLE_SCRIPT_URL + "?action=getInitialData")
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    loadDataToUI(data); 
-                    saveLocalCache();
-                    processSyncQueue();
-                }
-            })
-            .catch(err => console.log("Offline Mode"));
-        }
+        forceAppSync();
     });
+
+    function forceAppSync() {
+        fetch(GOOGLE_SCRIPT_URL + "?action=getInitialData")
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                localStorage.setItem('fleet_data_cache', JSON.stringify(data));
+                loadDataToUI(data); 
+                processSyncQueue();
+                toast('🟢 Data Refreshed Live!', 'success');
+            }
+        }).catch(err => {
+            console.log("Fetch Error:", err);
+        });
+    }
 
     function login() {
         const u = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -469,12 +538,16 @@
     function showTab(tabId, btn) { document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(tabId).classList.add('active'); btn.classList.add('active'); }
 
     function loadDataToUI(data) {
-        usersDB = data.users || [];
-        clientsDB = data.clients || []; driversDB = data.drivers || []; tripsDB = data.trips || [];
-        recentTripsDB = data.recent || []; recentTripsDB.sort((a,b) => String(a.date).localeCompare(String(b.date)));
-        financesDB = data.finances || []; financesDB.sort((a,b) => String(a.date).localeCompare(String(b.date)));
-        maintenanceDB = data.maintenance || []; maintenanceDB.sort((a,b) => String(a.date).localeCompare(String(b.date)));
+        usersDB = data.users || [{username:"SAMY", password:"852", role:"Admin"}];
+        clientsDB = data.clients || []; 
+        driversDB = data.drivers || []; 
+        tripsDB = data.trips || [];
+        
+        recentTripsDB = data.recent || []; 
+        financesDB = data.finances || []; 
+        maintenanceDB = data.maintenance || []; 
 
+        document.getElementById('loginUser').innerHTML = usersDB.map(u => `<option value="${u.username}">${u.username}</option>`).join('');
         document.getElementById('clientList').innerHTML = clientsDB.map(i => `<option value="${i}">`).join('');
         document.getElementById('driverList').innerHTML = driversDB.map(i => `<option value="${i.name}">`).join('');
         document.getElementById('tripList').innerHTML = tripsDB.map(i => `<option value="${i.name}">`).join('');
@@ -489,7 +562,33 @@
         if(mBody) {
             mBody.innerHTML = tripsDB.map((t, i) => `<tr><td>${i+1}</td><td style="text-align:left;">${t.name}</td><td>${t.lp||0}/${t.lr||0}</td><td>${t.mp||0}/${t.mr||0}</td><td>${t.cp||0}/${t.cr||0}</td><td>${t.bp||0}/${t.br||0}</td><td><button class="btn btn-blue" onclick="loadMasterEdit('trip', ${i})" style="padding:4px">✏️</button><button class="btn btn-red" onclick="removeMasterItem('Trip_Types', '${t.name}', ${i})" style="padding:4px">🗑️</button></td></tr>`).join('');
         }
+
+        renderUsersTable();
+        toggleReportTarget();
         renderRecentTrips(); renderFinances(); renderMaintenance();
+    }
+
+    function processSyncQueue() {
+        if (isSyncing || syncQueue.length === 0) return;
+        isSyncing = true; 
+        
+        const badge = document.getElementById('networkStatus');
+        badge.className = 'network-badge network-sync';
+        badge.innerHTML = '🔄 Syncing...';
+
+        const payload = syncQueue[0];
+        fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        .then(() => { 
+            syncQueue.shift(); 
+            localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); 
+            isSyncing = false; 
+            updateOnlineStatus(); 
+            processSyncQueue(); 
+        })
+        .catch(() => { 
+            isSyncing = false; 
+            updateOnlineStatus(); 
+        });
     }
 
     function addToSyncQueue(item) {
@@ -498,48 +597,6 @@
         processSyncQueue();
     }
 
-    function processSyncQueue() {
-        if (isSyncing || syncQueue.length === 0) { 
-            updateNetworkBadge(); 
-            return; 
-        }
-        if (!navigator.onLine) { 
-            updateNetworkBadge(); 
-            return; 
-        }
-
-        isSyncing = true; 
-        updateNetworkBadge();
-
-        const currentItem = syncQueue[0];
-
-        fetch(GOOGLE_SCRIPT_URL, { 
-            method: 'POST', 
-            mode: 'no-cors', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(currentItem) 
-        })
-        .then(() => {
-            syncQueue.shift(); 
-            localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); 
-            isSyncing = false; 
-            updateNetworkBadge();
-            
-            if (currentItem.record_type === "edit_trip") {
-                toast('✅ تمت المزامنة وتم التعديل بنجاح', 'success');
-            } else {
-                toast('✅ تمت المزامنة بنجاح', 'success');
-            }
-            
-            processSyncQueue();
-        })
-        .catch(err => { 
-            isSyncing = false; 
-            updateNetworkBadge();
-        });
-    }
-
-    // ================= Trip Logic =================
     function onTripSelected() {
         const tName = document.getElementById('tripNameSelect').value.trim();
         const vType = document.getElementById('tripVehicleType').value;
@@ -583,24 +640,22 @@
             addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB });
         }
 
-        const isEditing = !!editingTripId;
-        const targetId = editingTripId || generateID("TRIP");
+        const targetId = editingTripId || generateSequentialTripID();
         const tripObj = { id: targetId, date: tDate, client: client, driver: driverName, vehicle: vType, trip: tripName, revenue: rev, fee: fee, notes: notes };
 
-        if (isEditing) { 
-            const idx = recentTripsDB.findIndex(t => String(t.id).trim().toLowerCase() === String(editingTripId).trim().toLowerCase()); 
+        if (editingTripId) { 
+            const idx = recentTripsDB.findIndex(t => t.id === editingTripId); 
             if(idx > -1) recentTripsDB[idx] = tripObj; 
         } else { 
             recentTripsDB.push(tripObj); 
         }
         
-        recentTripsDB.sort((a,b) => String(a.date).localeCompare(String(b.date)));
-        saveLocalCache();
-        renderRecentTrips();
+        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB}));
         
-        const payloadType = isEditing ? "edit_trip" : "trip";
+        renderRecentTrips(); 
+        
         addToSyncQueue({ 
-            record_type: payloadType, 
+            record_type: editingTripId ? "edit_trip" : "trip", 
             trip_id: targetId, 
             client_name: client, 
             driver_name: driverName, 
@@ -612,15 +667,22 @@
             driver_fee: fee 
         });
 
-        toast(isEditing ? "💾 تم الحفظ محلياً... جاري المزامنة" : "💾 تم الحفظ محلياً", "info");
         clearForm();
+        toast(`✅ Saved (${targetId})!`, 'success');
+    }
+
+    function formatDateDisplay(rawDate) {
+        if(!rawDate) return '';
+        let dStr = String(rawDate);
+        if(dStr.includes('T')) { dStr = dStr.replace('T', ' '); }
+        return dStr.slice(0, 16);
     }
 
     function renderRecentTrips() {
         const tbody = document.querySelector('#recentTripsTable tbody');
         if(!tbody) return;
         if(recentTripsDB.length === 0) { tbody.innerHTML = '<tr><td colspan="9">No trips</td></tr>'; return; }
-        tbody.innerHTML = recentTripsDB.map((t, i) => `<tr><td>${i + 1}</td><td style="direction:ltr;">${(t.date||"").slice(0, 16)}</td><td>${t.client}</td><td>${t.driver}</td><td>${t.vehicle||'-'}</td><td>${t.trip}</td><td style="color:#27ae60;font-weight:bold;">${t.revenue}</td><td style="color:#e74c3c;">${t.fee}</td><td style="white-space:nowrap;"><button class="btn btn-blue" style="padding:4px 8px;" onclick="loadTrip(${i})">✏️</button><button class="btn btn-red" style="padding:4px 8px;" onclick="delTrip(${i})">🗑️</button><button class="btn btn-whatsapp" style="padding:4px 8px;" onclick="sendWA(${i})" title="WhatsApp">💬</button></td></tr>`).join('');
+        tbody.innerHTML = recentTripsDB.map((t, i) => `<tr><td>${t.id || (i + 1)}</td><td style="direction:ltr;">${formatDateDisplay(t.date)}</td><td>${t.client}</td><td>${t.driver}</td><td>${t.vehicle||'-'}</td><td>${t.trip}</td><td style="color:#27ae60;font-weight:bold;">${t.revenue}</td><td style="color:#e74c3c;">${t.fee}</td><td style="white-space:nowrap;"><button class="btn btn-blue" style="padding:4px 8px;" onclick="loadTrip(${i})">✏️</button><button class="btn btn-red" style="padding:4px 8px;" onclick="delTrip(${i})">🗑️</button><button class="btn btn-whatsapp" style="padding:4px 8px;" onclick="sendWA(${i})" title="WhatsApp">💬</button></td></tr>`).join('');
     }
 
     function sendWA(idx) {
@@ -628,7 +690,7 @@
         let driverObj = driversDB.find(d => d.name === t.driver);
         let phone = driverObj ? driverObj.phone : "";
         let cleanPhone = phone.replace(/\D/g,'');
-        let txt = `Trip Details 🚘\nDate: ${t.date.slice(0,16)}\nClient: ${t.client}\nVehicle: ${t.vehicle}\nTrip: ${t.trip}\nAmount: ${t.fee} EGP`;
+        let txt = `Trip Details 🚘\nDate: ${formatDateDisplay(t.date)}\nClient: ${t.client}\nVehicle: ${t.vehicle}\nTrip: ${t.trip}\nAmount: ${t.fee} EGP`;
         if(cleanPhone) { window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(txt)}`, '_blank'); } 
         else { window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank'); }
     }
@@ -636,25 +698,24 @@
     function loadTrip(idx) {
         const t = recentTripsDB[idx]; 
         editingTripId = t.id;
-        document.getElementById('tripDate').value = t.date.replace(' ', 'T').slice(0,16);
-        document.getElementById('tripClientSelect').value = t.client; 
-        document.getElementById('tripDriverSelect').value = t.driver;
+        let dateVal = String(t.date || '').replace(' ', 'T').slice(0,16);
+        document.getElementById('tripDate').value = dateVal;
+        document.getElementById('tripClientSelect').value = t.client || ''; 
+        document.getElementById('tripDriverSelect').value = t.driver || '';
         document.getElementById('tripVehicleType').value = t.vehicle || 'Limousine'; 
-        document.getElementById('tripNameSelect').value = t.trip;
-        document.getElementById('revEGP').value = t.revenue; 
-        document.getElementById('tripDriverFee').value = t.fee; 
+        document.getElementById('tripNameSelect').value = t.trip || '';
+        document.getElementById('revEGP').value = t.revenue || 0; 
+        document.getElementById('tripDriverFee').value = t.fee || 0; 
         document.getElementById('tripNotes').value = t.notes || '';
-        document.getElementById('saveTripBtn').innerText = 'Update Trip ✏️';
-        document.getElementById('formTripTitle').innerText = '📝 Edit Trip (' + t.id + ')';
         calcTotals(); 
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function delTrip(idx) { 
-        if(confirm('Delete?')) { 
+        if(confirm('Delete this trip?')) { 
             addToSyncQueue({record_type:"delete_trip", trip_id: recentTripsDB[idx].id}); 
             recentTripsDB.splice(idx,1); 
-            saveLocalCache(); 
+            localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); 
             renderRecentTrips(); 
         } 
     }
@@ -668,12 +729,9 @@
         document.getElementById('tripDriverFee').value='0'; 
         document.getElementById('tripNotes').value=''; 
         document.getElementById('tripDate').value = getCurrentLocalDateTime(); 
-        document.getElementById('saveTripBtn').innerText = 'Save Trip 💾';
-        document.getElementById('formTripTitle').innerText = '📝 Add New Trip';
         calcTotals(); 
     }
 
-    // ================= Master Adds =================
     function loadMasterEdit(type, index) {
         if(type === 'client') { document.getElementById('mClientName').value = clientsDB[index]; editingMasterIndex.client = index; document.getElementById('addClientBtn').innerText = "Update"; } 
         else if(type === 'driver') { document.getElementById('mDriverName').value = driversDB[index].name; document.getElementById('mDriverPhone').value = driversDB[index].phone||''; editingMasterIndex.driver = index; document.getElementById('addDriverBtn').innerText = "Update"; } 
@@ -704,9 +762,8 @@
             document.querySelectorAll('#mastersTab input[type="number"]').forEach(i => i.value=''); document.getElementById('mTripName').value=''; editingMasterIndex.trip = -1;
         }
         loadDataToUI({users:usersDB, clients:clientsDB, drivers:driversDB, trips:tripsDB, recent:recentTripsDB, finances:financesDB, maintenance:maintenanceDB});
-        saveLocalCache(); 
-        addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); 
-        toast('Saved!');
+        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); 
+        addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); toast('Saved!');
     }
     function removeMasterItem(sheetName, name, idx) {
         if(!confirm('Delete?')) return;
@@ -714,57 +771,178 @@
         if(sheetName === 'Drivers') driversDB.splice(idx, 1);
         if(sheetName === 'Trip_Types') tripsDB.splice(idx, 1);
         loadDataToUI({users:usersDB, clients:clientsDB, drivers:driversDB, trips:tripsDB, recent:recentTripsDB, finances:financesDB, maintenance:maintenanceDB});
-        saveLocalCache(); 
-        addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); 
-        toast('Deleted');
+        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); 
+        addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); toast('Deleted');
     }
 
+    // ================== EDIT FINANCE IMPLEMENTATION ==================
     function renderFinances() {
-        const tbody = document.querySelector('#financeTable tbody'); if(!tbody) return; if(financesDB.length === 0) { tbody.innerHTML = '<tr><td colspan="7">No records</td></tr>'; return; }
-        tbody.innerHTML = financesDB.map((f, i) => `<tr><td>${i + 1}</td><td style="direction:ltr;">${(f.date||"").slice(0, 16)}</td><td style="color:${f.type==='Revenue'?'#27ae60':'#e74c3c'};">${f.type}</td><td>${f.category}</td><td style="font-weight:bold;">${f.amount}</td><td>${f.notes}</td><td style="white-space:nowrap;"><button class="btn btn-red" onclick="deleteFinance(${i})" style="padding:4px">🗑️</button></td></tr>`).join('');
+        const tbody = document.querySelector('#financeTable tbody'); 
+        if(!tbody) return; 
+        if(financesDB.length === 0) { tbody.innerHTML = '<tr><td colspan="7">No records</td></tr>'; return; }
+        tbody.innerHTML = financesDB.map((f, i) => `<tr><td>${i + 1}</td><td style="direction:ltr;">${formatDateDisplay(f.date)}</td><td style="color:${f.type==='Revenue'?'#27ae60':'#e74c3c'};">${f.type}</td><td>${f.category}</td><td style="font-weight:bold;">${f.amount}</td><td>${f.notes||''}</td><td style="white-space:nowrap;"><button class="btn btn-blue" onclick="loadFinance(${i})" style="padding:4px 8px;">✏️</button><button class="btn btn-red" onclick="deleteFinance(${i})" style="padding:4px 8px;">🗑️</button></td></tr>`).join('');
     }
+
     function saveFinance() {
-        const tDate = document.getElementById('finDate').value.replace('T', ' '); const tType = document.getElementById('finType').value; const cat = document.getElementById('finCategory').value; const amt = parseFloat(document.getElementById('finAmount').value); const notes = document.getElementById('finNotes').value;
-        if(!amt || !cat) return; let targetId = generateID("FIN"); financesDB.push({ id: targetId, date: tDate, type: tType, category: cat, amount: amt, notes: notes });
-        financesDB.sort((a,b) => String(a.date).localeCompare(String(b.date))); saveLocalCache(); renderFinances(); addToSyncQueue({ record_type: "finance", fin_id: targetId, fin_type: tType, category: cat, amount: amt, date: tDate, notes: notes, added_by: loggedInUser }); toast('Saved');
+        const tDate = document.getElementById('finDate').value.replace('T', ' '); 
+        const tType = document.getElementById('finType').value; 
+        const cat = document.getElementById('finCategory').value.trim(); 
+        const amt = parseFloat(document.getElementById('finAmount').value); 
+        const notes = document.getElementById('finNotes').value.trim();
+        
+        if(!amt || !cat) return toast('⚠️ Please fill required fields!', 'warn'); 
+
+        let targetId = editingFinId || generateID("FIN"); 
+        const finObj = { id: targetId, date: tDate, type: tType, category: cat, amount: amt, notes: notes };
+
+        if(editingFinId) {
+            const idx = financesDB.findIndex(f => f.id === editingFinId);
+            if(idx > -1) financesDB[idx] = finObj;
+        } else {
+            financesDB.push(finObj);
+        }
+
+        renderFinances(); 
+        addToSyncQueue({ 
+            record_type: editingFinId ? "edit_finance" : "finance", 
+            fin_id: targetId, 
+            fin_type: tType, 
+            category: cat, 
+            amount: amt, 
+            date: tDate, 
+            notes: notes, 
+            added_by: loggedInUser 
+        }); 
+
+        clearFinanceForm();
+        toast('✅ Finance Saved!', 'success');
     }
-    function deleteFinance(i) { if(confirm('Del?')) { addToSyncQueue({record_type:"delete_finance", fin_id: financesDB[i].id}); financesDB.splice(i,1); saveLocalCache(); renderFinances(); } }
+
+    function loadFinance(idx) {
+        const f = financesDB[idx];
+        editingFinId = f.id;
+        document.getElementById('finType').value = f.type || 'Expense';
+        document.getElementById('finCategory').value = f.category || '';
+        document.getElementById('finAmount').value = f.amount || '';
+        document.getElementById('finDate').value = String(f.date || '').replace(' ', 'T').slice(0, 16);
+        document.getElementById('finNotes').value = f.notes || '';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function deleteFinance(i) { 
+        if(confirm('Delete finance record?')) { 
+            addToSyncQueue({record_type:"delete_finance", fin_id: financesDB[i].id}); 
+            financesDB.splice(i,1); 
+            renderFinances(); 
+        } 
+    }
+
+    function clearFinanceForm() { 
+        editingFinId = null;
+        document.getElementById('finCategory').value=''; 
+        document.getElementById('finAmount').value=''; 
+        document.getElementById('finNotes').value=''; 
+        document.getElementById('finDate').value = getCurrentLocalDateTime();
+    }
+
+    // ================== USERS MANAGEMENT ==================
+    function changeMyPassword() {
+        const p1 = document.getElementById('chgNewPass').value.trim();
+        const p2 = document.getElementById('chgConfPass').value.trim();
+        if(!p1) return toast('⚠️ Please enter password!', 'warn');
+        if(p1 !== p2) return toast('❌ Passwords do not match!', 'error');
+
+        addToSyncQueue({ record_type: "change_password", username: loggedInUser, new_password: p1 });
+        const userObj = usersDB.find(u => u.username.toLowerCase() === loggedInUser.toLowerCase());
+        if(userObj) userObj.password = p1;
+        
+        document.getElementById('chgNewPass').value = '';
+        document.getElementById('chgConfPass').value = '';
+        toast('✅ Password Updated Successfully!', 'success');
+    }
+
+    function createNewUser() {
+        const u = document.getElementById('newUsername').value.trim();
+        const p = document.getElementById('newUserPass').value.trim();
+        const r = document.getElementById('newUserRole').value;
+
+        if(!u || !p) return toast('⚠️ Please fill username and password!', 'warn');
+        if(usersDB.find(x => x.username.toLowerCase() === u.toLowerCase())) return toast('❌ Username already exists!', 'error');
+
+        usersDB.push({ username: u, password: p, role: r });
+        addToSyncQueue({ record_type: "add_user", username: u, password: p, role: r });
+        
+        renderUsersTable();
+        document.getElementById('loginUser').innerHTML = usersDB.map(usr => `<option value="${usr.username}">${usr.username}</option>`).join('');
+        
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newUserPass').value = '';
+        toast('✅ New User Added!', 'success');
+    }
+
+    function deleteUser(idx) {
+        const u = usersDB[idx];
+        if(u.username.toUpperCase() === 'SAMY') return toast('❌ Cannot delete primary Admin SAMY!', 'error');
+        if(confirm(`Delete user ${u.username}?`)) {
+            addToSyncQueue({ record_type: "delete_user", username: u.username });
+            usersDB.splice(idx, 1);
+            renderUsersTable();
+            document.getElementById('loginUser').innerHTML = usersDB.map(usr => `<option value="${usr.username}">${usr.username}</option>`).join('');
+            toast('User Deleted');
+        }
+    }
+
+    function renderUsersTable() {
+        const tbody = document.querySelector('#usersTable tbody');
+        if(!tbody) return;
+        tbody.innerHTML = usersDB.map((u, i) => `<tr><td>${i + 1}</td><td>${u.username}</td><td><span style="font-weight:bold; color:${u.role==='Admin'?'#27ae60':'#1e3c72'}">${u.role}</span></td><td>${u.username.toUpperCase() !== 'SAMY' ? `<button class="btn btn-red" onclick="deleteUser(${i})" style="padding:4px 8px;">🗑️ Delete</button>` : 'System Default'}</td></tr>`).join('');
+    }
 
     function renderMaintenance() {
         const tbody = document.querySelector('#maintenanceTable tbody'); if(!tbody) return; if(maintenanceDB.length === 0) { tbody.innerHTML = '<tr><td colspan="8">No records</td></tr>'; return; }
-        tbody.innerHTML = maintenanceDB.map((m, i) => `<tr><td>${i + 1}</td><td style="direction:ltr;">${(m.date||"").slice(0, 16)}</td><td>${m.type}</td><td style="color:#e74c3c;">${m.amount}</td><td>${m.location}</td><td>${m.odometer}</td><td>${m.notes}</td><td style="white-space:nowrap;"><button class="btn btn-red" onclick="deleteMaintenance(${i})" style="padding:4px">🗑️</button></td></tr>`).join('');
+        tbody.innerHTML = maintenanceDB.map((m, i) => `<tr><td>${i + 1}</td><td style="direction:ltr;">${formatDateDisplay(m.date)}</td><td>${m.type}</td><td style="color:#e74c3c;">${m.amount}</td><td>${m.location}</td><td>${m.odometer}</td><td>${m.notes}</td><td style="white-space:nowrap;"><button class="btn btn-red" onclick="deleteMaintenance(${i})" style="padding:4px">🗑️</button></td></tr>`).join('');
     }
     function saveMaintenance() {
         const mDate = document.getElementById('mntDate').value.replace('T', ' '); const type = document.getElementById('mntType').value; const amt = parseFloat(document.getElementById('mntAmount').value); const loc = document.getElementById('mntLocation').value; const odo = document.getElementById('mntOdometer').value; const notes = document.getElementById('mntNotes').value;
         if(!amt || !type) return; let targetId = generateID("MNT"); maintenanceDB.push({ id: targetId, date: mDate, type: type, amount: amt, location: loc, odometer: odo, notes: notes });
-        maintenanceDB.sort((a,b) => String(a.date).localeCompare(String(b.date))); saveLocalCache(); renderMaintenance(); addToSyncQueue({ record_type: "maintenance", mnt_id: targetId, type: type, amount: amt, location: loc, odometer: odo, date: mDate, notes: notes, added_by: loggedInUser }); toast('Saved');
+        renderMaintenance(); addToSyncQueue({ record_type: "maintenance", mnt_id: targetId, type: type, amount: amt, location: loc, odometer: odo, date: mDate, notes: notes, added_by: loggedInUser }); toast('Saved');
+        document.getElementById('mntType').value = ''; document.getElementById('mntAmount').value = '';
     }
-    function deleteMaintenance(i) { if(confirm('Del?')) { addToSyncQueue({record_type:"delete_maintenance", mnt_id: maintenanceDB[i].id}); maintenanceDB.splice(i,1); saveLocalCache(); renderMaintenance(); } }
+    function deleteMaintenance(i) { if(confirm('Del?')) { addToSyncQueue({record_type:"delete_maintenance", mnt_id: maintenanceDB[i].id}); maintenanceDB.splice(i,1); renderMaintenance(); } }
+    function clearMaintenanceForm() { document.getElementById('mntType').value=''; document.getElementById('mntAmount').value=''; }
 
-    function exportToPDF() {
-        const reportContent = document.getElementById('reportPrintArea').innerHTML;
-        if (!reportContent || reportContent.indexOf('table') === -1) {
-            return toast('⚠️ Please search and render report first!', 'warn');
+    function openInBrowser() {
+        toast('⏳ Opening Browser...', 'info');
+        window.open(window.location.href, '_system') || window.open(window.location.href, '_blank');
+    }
+
+    function exportToWindowsPDF() { window.print(); }
+
+    function shareReportText() {
+        const title = document.getElementById('printReportTitle').innerText;
+        const table = document.getElementById('reportsTable');
+        const summary = document.getElementById('netProfitSummary');
+        let reportText = `🚘 ${title}\n\n`;
+        if (table && table.rows.length > 1) {
+            for (let i = 0; i < table.rows.length; i++) {
+                let cells = table.rows[i].cells; let rowTxt = [];
+                for (let j = 0; j < cells.length; j++) { rowTxt.push(cells[j].innerText.trim()); }
+                reportText += rowTxt.join(' | ') + '\n';
+            }
         }
-        document.getElementById('printModalContent').innerHTML = reportContent;
-        document.getElementById('printModal').style.display = 'flex';
+        if (summary.style.display !== 'none') { reportText += `\n` + summary.innerText; }
+        window.open(`https://wa.me/?text=${encodeURIComponent(reportText)}`, '_blank');
     }
 
-    function downloadModalAsImage() {
-        const element = document.getElementById('printModalContent');
-        toast('⏳ Generating Document Image...', 'info');
-        html2canvas(element, { scale: 2 }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = 'Report_' + Date.now() + '.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            toast('✅ Report Saved!', 'success');
-        }).catch(err => {
-            toast('❌ Download Error: ' + err.message, 'error');
-        });
+    function exportToExcel() {
+        const table = document.getElementById('reportsTable');
+        if (!table || table.rows.length <= 1) return toast('⚠️ No report data!', 'warn');
+        try {
+            const wb = XLSX.utils.table_to_book(table, { sheet: "Fleet_Report" });
+            XLSX.writeFile(wb, "Fleet_Report_" + Date.now() + ".xlsx");
+            toast('✅ Excel Downloaded!', 'success');
+        } catch(e) { toast('❌ Export Error: ' + e.message, 'error'); }
     }
-
-    function closePrintModal() { document.getElementById('printModal').style.display = 'none'; }
 
     function toast(msg, type='info') {
         const stack = document.getElementById('toastStack'); const el = document.createElement('div'); el.className = 'toast';
@@ -774,22 +952,23 @@
 
     function toggleReportTarget() {
         const type = document.getElementById('reportType').value;
-        const sel = document.getElementById('reportTarget'); sel.innerHTML = '';
+        const targetContainer = document.getElementById('targetContainer');
+        const sel = document.getElementById('reportTarget'); 
+        sel.innerHTML = '';
         const lbl = document.getElementById('targetLabel');
         let dL = dict[currentLang];
         
+        targetContainer.style.display = 'flex';
+
         if(type === 'client') {
-            lbl.innerText = dL.client;
-            clientsDB.forEach(i => sel.innerHTML += `<option>${i}</option>`);
+            lbl.innerText = dL.client; clientsDB.forEach(i => sel.innerHTML += `<option>${i}</option>`);
         } else if(type === 'driver') {
-            lbl.innerText = dL.driver;
-            driversDB.forEach(i => sel.innerHTML += `<option>${i.name}</option>`);
+            lbl.innerText = dL.driver; driversDB.forEach(i => sel.innerHTML += `<option>${i.name}</option>`);
         } else if(type === 'trip_detailed') {
-            lbl.innerText = dL.trip;
-            tripsDB.forEach(i => sel.innerHTML += `<option>${i.name}</option>`);
-        } else {
-            lbl.innerText = dL.target;
-        }
+            lbl.innerText = dL.trip; tripsDB.forEach(i => sel.innerHTML += `<option>${i.name}</option>`);
+        } else if (type === 'finance' || type === 'maintenance' || type === 'net_profit') {
+            targetContainer.style.display = 'none'; 
+        } else { lbl.innerText = dL.target; }
     }
 
     function fetchReports() {
@@ -797,8 +976,53 @@
         const target = (document.getElementById('reportTarget').value || "").toLowerCase().trim();
         const fDate = document.getElementById('repFrom').value;
         const tDate = document.getElementById('repTo').value;
+        const tbody = document.querySelector('#reportsTable tbody');
+        const thead = document.querySelector('#reportsTable thead');
+        const summaryCard = document.getElementById('netProfitSummary');
         
-        let res = [];
+        tbody.innerHTML = ''; thead.innerHTML = '';
+        summaryCard.style.display = 'none'; summaryCard.innerHTML = '';
+
+        let res = []; let dL = dict[currentLang];
+
+        if (type === 'net_profit') {
+            let tRev = 0, fRev = 0, fExp = 0, mExp = 0;
+            recentTripsDB.forEach(t => {
+                const d = (t.date || "").split(' ')[0];
+                if (d >= fDate && d <= tDate) tRev += parseFloat(t.revenue || 0);
+            });
+            financesDB.forEach(f => {
+                const d = (f.date || "").split(' ')[0];
+                if (d >= fDate && d <= tDate) {
+                    if(f.type === 'Revenue') fRev += parseFloat(f.amount || 0);
+                    else fExp += parseFloat(f.amount || 0);
+                }
+            });
+            maintenanceDB.forEach(m => {
+                const d = (m.date || "").split(' ')[0];
+                if (d >= fDate && d <= tDate) mExp += parseFloat(m.amount || 0);
+            });
+
+            let totalIncome = tRev + fRev;
+            let totalExpenses = fExp + mExp;
+            let net = totalIncome - totalExpenses;
+
+            document.getElementById('printReportTitle').innerHTML = `🚘 ${dL.opt_net_profit} <br><span style="font-size:10pt; color:#666;">(${fDate} ➡ ${tDate})</span>`;
+            document.getElementById('printReportTitle').style.display = 'block';
+
+            summaryCard.style.display = 'block';
+            summaryCard.innerHTML = `
+                <div class="net-profit-card">
+                    <p style="font-size:1.1rem; margin-bottom:5px;">Total Income (Trips + Revenues): <strong>${totalIncome.toFixed(2)}</strong></p>
+                    <p style="font-size:1.1rem; margin-bottom:15px; color:#ffcccc;">Total Expenses (Maintenance + Others): <strong>${totalExpenses.toFixed(2)}</strong></p>
+                    <hr style="border-color:rgba(255,255,255,0.2); margin-bottom:15px;">
+                    <p style="font-size:1.3rem;">NET PROFIT / صافي الربح</p>
+                    <h2>${net.toFixed(2)} EGP</h2>
+                </div>
+            `;
+            return;
+        }
+
         if (type === 'finance') {
             financesDB.forEach(f => {
                 const d = (f.date || "").split(' ')[0];
@@ -832,35 +1056,33 @@
             });
         }
         
-        const tbody = document.querySelector('#reportsTable tbody');
-        tbody.innerHTML = '';
         let tot = 0;
-        let dL = dict[currentLang];
         
         if (type === 'finance') {
             document.querySelector('#reportsTable thead').innerHTML = `<tr><th>${dL.th_num}</th><th>${dL.date}</th><th>${dL.rep_type}</th><th>${dL.rep_cat}</th><th>${dL.rep_amt}</th></tr>`;
             res.forEach((r, i) => { 
                 tot += (r.type === 'Revenue' ? parseFloat(r.amount) : -parseFloat(r.amount)); 
-                tbody.innerHTML += `<tr><td>${i + 1}</td><td style="direction:ltr;">${r.date.slice(0, 16)}</td><td>${r.type}</td><td>${r.category}</td><td style="font-weight:bold;">${parseFloat(r.amount).toFixed(2)}</td></tr>`; 
+                tbody.innerHTML += `<tr><td>${i + 1}</td><td style="direction:ltr;">${formatDateDisplay(r.date)}</td><td>${r.type}</td><td>${r.category}</td><td style="font-weight:bold;">${parseFloat(r.amount).toFixed(2)}</td></tr>`; 
             });
             tbody.innerHTML += `<tr class="total-row"><td colspan="4">${dL.th_tot}</td><td style="direction:ltr;">${tot.toFixed(2)}</td></tr>`;
+            document.getElementById('printReportTitle').innerHTML = `🚘 ${dL.opt_fin} <br><span style="font-size:10pt; color:#666;">(${fDate} ➡ ${tDate})</span>`;
         } else if (type === 'maintenance') {
             document.querySelector('#reportsTable thead').innerHTML = `<tr><th>${dL.th_num}</th><th>${dL.date}</th><th>${dL.rep_type}</th><th>${dL.rep_loc}</th><th>${dL.rep_amt}</th></tr>`;
             res.forEach((r, i) => { 
                 tot += parseFloat(r.amount); 
-                tbody.innerHTML += `<tr><td>${i + 1}</td><td style="direction:ltr;">${r.date.slice(0, 16)}</td><td>${r.type}</td><td>${r.location}</td><td style="font-weight:bold;">${parseFloat(r.amount).toFixed(2)}</td></tr>`; 
+                tbody.innerHTML += `<tr><td>${i + 1}</td><td style="direction:ltr;">${formatDateDisplay(r.date)}</td><td>${r.type}</td><td>${r.location}</td><td style="font-weight:bold;">${parseFloat(r.amount).toFixed(2)}</td></tr>`; 
             });
             tbody.innerHTML += `<tr class="total-row"><td colspan="4">${dL.th_tot}</td><td style="direction:ltr;">${tot.toFixed(2)}</td></tr>`;
+            document.getElementById('printReportTitle').innerHTML = `🚘 ${dL.opt_mnt} <br><span style="font-size:10pt; color:#666;">(${fDate} ➡ ${tDate})</span>`;
         } else {
             document.querySelector('#reportsTable thead').innerHTML = `<tr><th>${dL.th_num}</th><th>${dL.date}</th><th>${dL.th_desc}</th><th>${dL.rep_amt}</th></tr>`;
             res.forEach((r, i) => { 
                 tot += parseFloat(r.amt); 
-                tbody.innerHTML += `<tr><td>${i + 1}</td><td style="direction:ltr;">${r.date.slice(0, 16)}</td><td>${r.desc}</td><td style="font-weight:bold;">${parseFloat(r.amt).toFixed(2)}</td></tr>`; 
+                tbody.innerHTML += `<tr><td>${i + 1}</td><td style="direction:ltr;">${formatDateDisplay(r.date)}</td><td>${r.desc}</td><td style="font-weight:bold;">${parseFloat(r.amt).toFixed(2)}</td></tr>`; 
             });
             tbody.innerHTML += `<tr class="total-row"><td colspan="3">${dL.th_tot}</td><td style="direction:ltr;">${tot.toFixed(2)}</td></tr>`;
+            document.getElementById('printReportTitle').innerHTML = `🚘 ${dL.tab_rep}: ${target.toUpperCase()} <br><span style="font-size:10pt; color:#666;">(${fDate} ➡ ${tDate})</span>`;
         }
-        
-        document.getElementById('printReportTitle').innerHTML = `🚘 ${dL.tab_rep}: ${target.toUpperCase()} <br><span style="font-size:10pt; color:#666;">(${fDate} ➡ ${tDate})</span>`; 
         document.getElementById('printReportTitle').style.display = 'block';
     }
 </script>
