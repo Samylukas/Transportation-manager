@@ -349,8 +349,9 @@
 </div>
 
 <script>
-    // الرابط من صورتك بالضبط
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZlhgfY0TiioihvR34rGMpDSIOUMv1rft37aBxH5_JJp0NhVtl5wYHg/exec";    
+    // الرابط المحدث الذي قمت بطلبه
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZIhgfY0TiioihvR34rGMpDSlOUMv1rft37aBxH5_JJp0NhVtI5wYHg/exec"; 
+    
     let loggedInUser = ''; let userRole = '';
     let usersDB = [], clientsDB = [], driversDB = [], tripsDB = []; 
     let recentTripsDB = [], financesDB = [], maintenanceDB = [];
@@ -532,7 +533,6 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB}));
         
         renderRecentTrips(); clearForm();
-        // إرسال كود edit_trip للجوجل شيت ليتعرف عليه ويعدل الفاتورة القديمة
         addToSyncQueue({ record_type: editingTripId ? "edit_trip" : "trip", trip_id: targetId, client_name: client, driver_name: driverName, vehicle_type: vType, trip_name: tripName, date: tDate, notes: notes, revenue: rev, driver_fee: fee });
         toast(`✅ Saved!`, 'success');
     }
