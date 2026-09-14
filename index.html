@@ -143,8 +143,8 @@
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f39c12; padding-bottom: 10px; margin-bottom: 20px;">
                 <h2 class="section-title" id="formTripTitle" data-tr="add_title">📝 Add New Trip</h2>
                 <div style="display: flex; gap: 5px;">
-                    <button class="btn btn-green" style="padding: 5px 10px;" onclick="clearForm()" title="New Trip">🆕</button>
-                    <button class="btn btn-gray" style="padding: 5px 10px;" onclick="clearForm()" title="Clear">🧹</button>
+                    <button class="btn btn-green" style="padding: 5px 10px;" onclick="clearForm()">🆕</button>
+                    <button class="btn btn-gray" style="padding: 5px 10px;" onclick="clearForm()">🧹</button>
                 </div>
             </div>
 
@@ -395,10 +395,7 @@
     function getCurrentLocalDateTime() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); }
     function generateID(prefix) { return prefix + "-" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000); }
     
-    function forceAppSync() { 
-        localStorage.removeItem('fleet_data_cache'); 
-        location.reload(); 
-    }
+    function forceAppSync() { localStorage.removeItem('fleet_data_cache'); location.reload(); }
 
     function saveLocalCache() {
         localStorage.setItem('fleet_data_cache', JSON.stringify({
@@ -451,7 +448,7 @@
                     processSyncQueue();
                 }
             })
-            .catch(err => console.log("Working in Offline Cache Mode"));
+            .catch(err => console.log("Offline Mode - Local cache active"));
         }
     });
 
@@ -513,9 +510,9 @@
         isSyncing = true; 
         updateNetworkBadge();
 
+        // إرسال POST بدون Custom Headers لتفادي حظر OPTIONS من جوجل
         fetch(GOOGLE_SCRIPT_URL, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+            method: 'POST',
             body: JSON.stringify(syncQueue[0]) 
         })
         .then(res => res.json())
@@ -526,7 +523,6 @@
                 isSyncing = false; 
                 updateNetworkBadge();
                 
-                // إظهار الرسالة المطلوبة
                 if (finishedAction.record_type === "edit_trip") {
                     toast('✅ تمت المزامنة وتم التعديل بنجاح', 'success');
                 } else {
@@ -618,7 +614,7 @@
             driver_fee: fee 
         });
 
-        toast(isEditing ? "💾 تم الحفظ محلياً... جاري رفع التعديل" : "💾 تم الحفظ محلياً", "info");
+        toast(isEditing ? "💾 تم الحفظ محلياً... جاري جلب المزامنة" : "💾 تم الحفظ محلياً", "info");
         clearForm();
     }
 
