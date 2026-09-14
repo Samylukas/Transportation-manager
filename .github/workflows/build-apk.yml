@@ -1,0 +1,52 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch: # عشان تقدر تشغله يدوي بضغطة زرار
+  push:
+    branches: [ main, master ] # هيشتغل تلقائي لما تعدل الكود
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Capacitor Dependencies
+        run: npm install
+
+      - name: Prepare Web Folder
+        run: |
+          mkdir -p www
+          cp index.html www/
+          # لو عندك لوجو سميه icon.png وحطه في الريبوزيتوري وشيل علامة الشباك من السطر الجاي
+          # cp icon.png www/
+
+      - name: Add Android Platform
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SamyFleetPro-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
