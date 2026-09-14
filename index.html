@@ -343,7 +343,9 @@
 </div>
 
 <script>
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZIhgfY0TiioihvR34rGMpDSIOUMv1rft37aBxH5_JJp0NhVtl5wYHg/exec";    
+    // الرابط المباشر الصحيح من لقطة الشاشة بدون أي حروف مكتوبة خطأ
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZIhgfY0TiioihvR34rGMpDSIOUMv1rft37aBxH5_JJp0NhVtl5wYHg/exec"; 
+    
     let loggedInUser = ''; let userRole = '';
     let usersDB = [], clientsDB = [], driversDB = [], tripsDB = []; 
     let recentTripsDB = [], financesDB = [], maintenanceDB = [];
@@ -447,7 +449,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
                     processSyncQueue();
                 }
             })
-            .catch(err => console.log("Offline Mode - Running on Cache"));
+            .catch(err => console.log("Offline Mode"));
         }
     });
 
@@ -496,7 +498,6 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGq
         processSyncQueue();
     }
 
-    // الدالة الأصلية المعتمدة مع no-cors لمنع حظر الطلبات من جوجل شيت
     function processSyncQueue() {
         if (isSyncing || syncQueue.length === 0) { 
             updateNetworkBadge(); 
