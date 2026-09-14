@@ -122,16 +122,13 @@
     <div class="header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
             <span id="userInfo">👤 Welcome</span>
-            <!-- تم تعديل زر الشبكة ليكون أداة ممتازة لمسح الكاش وتحديث البيانات -->
-            <div id="networkStatus" class="network-badge network-online" onclick="forceAppSync()" title="اضغط هنا لتحديث البيانات من جوجل شيت">🟢 Online</div>
+            <div id="networkStatus" class="network-badge network-online" onclick="forceAppSync()" title="Click to Refresh Data">🟢 Online</div>
         </div>
         <div style="display:flex; gap:10px;">
             <button class="btn btn-outline" onclick="toggleLang()">🌐 AR/EN</button>
             <button class="btn btn-red" onclick="logout()" data-tr="logout">Logout 🚪</button>
         </div>
     </div>
-
-    <!-- تم إزالة الداشبورد بناءً على طلبك لتوفير المساحة -->
 
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="showTab('addTripTab', this)" data-tr="tab_add">📝 Add Trip</button>
@@ -349,7 +346,7 @@
 </div>
 
 <script>
-    // الرابط المحدث الذي قمت بطلبه
+    // الرابط المباشر والدقيق لجوجل شيت
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQZp6Hx1GuGqqPZIhgfY0TiioihvR34rGMpDSlOUMv1rft37aBxH5_JJp0NhVtI5wYHg/exec"; 
     
     let loggedInUser = ''; let userRole = '';
@@ -384,12 +381,17 @@
     function getCurrentLocalDateTime() { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); }
     function generateID(prefix) { return prefix + "-" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000); }
     
-    // الدالة المسؤولة عن مسح الكاش القديم وتحميل الداتا الجديدة من جوجل شيت
-    function forceAppSync() { localStorage.removeItem('fleet_data_cache'); location.reload(); }
+    function forceAppSync() { 
+        localStorage.removeItem('fleet_data_cache'); 
+        location.reload(); 
+    }
 
     window.addEventListener('load', () => {
         document.documentElement.dir = 'ltr';
         document.documentElement.lang = 'en';
+
+        // إلغاء الكاش القديم عند التحميل لأول مرة لضمان جلب البيانات من السيرفر
+        localStorage.removeItem('fleet_data_cache');
 
         const session = localStorage.getItem('samy_logged_in_user');
         setTimeout(() => {
@@ -416,16 +418,24 @@
         document.getElementById('repFrom').value = firstDay.toISOString().slice(0, 10);
         document.getElementById('repTo').value = new Date().toISOString().slice(0, 10);
 
-        let cached = localStorage.getItem('fleet_data_cache');
-        if (cached) { try { loadDataToUI(JSON.parse(cached)); } catch(e) { localStorage.removeItem('fleet_data_cache'); } } 
-        else { usersDB = [{username: "SAMY", password: "852", role: "Admin"}]; }
+        usersDB = [{username: "SAMY", password: "852", role: "Admin"}];
         
-        fetch(GOOGLE_SCRIPT_URL + "?action=getInitialData").then(res => res.json()).then(data => {
+        // الاتصال المباشر بقاعدة البيانات
+        fetch(GOOGLE_SCRIPT_URL + "?action=getInitialData")
+        .then(res => res.json())
+        .then(data => {
             if (data.status === 'success') {
                 localStorage.setItem('fleet_data_cache', JSON.stringify(data));
-                loadDataToUI(data); processSyncQueue();
+                loadDataToUI(data); 
+                processSyncQueue();
+            } else {
+                toast('❌ Error loading data', 'error');
             }
-        }).catch(err => console.log("Offline Mode"));
+        })
+        .catch(err => {
+            console.error("Fetch Error:", err);
+            toast('⚠️ Network or CORS Error', 'error');
+        });
     });
 
     window.addEventListener('online', processSyncQueue);
@@ -470,12 +480,33 @@
         renderRecentTrips(); renderFinances(); renderMaintenance();
     }
 
+    function addToSyncQueue(item) {
+        syncQueue.push(item);
+        localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue));
+        processSyncQueue();
+    }
+
     function processSyncQueue() {
         if (isSyncing || syncQueue.length === 0) { if(navigator.onLine && syncQueue.length===0) document.getElementById('networkStatus').innerHTML = '🟢 Online'; return; }
         if (!navigator.onLine) { document.getElementById('networkStatus').innerHTML = '🔴 Offline'; return; }
         isSyncing = true; document.getElementById('networkStatus').innerHTML = '🔄 Syncing...';
-        fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(syncQueue[0]) })
-        .then(() => { syncQueue.shift(); localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); isSyncing = false; processSyncQueue(); })
+        
+        fetch(GOOGLE_SCRIPT_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+            body: JSON.stringify(syncQueue[0]) 
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                syncQueue.shift(); 
+                localStorage.setItem('fleet_sync_queue', JSON.stringify(syncQueue)); 
+                isSyncing = false; 
+                processSyncQueue();
+            } else {
+                isSyncing = false;
+            }
+        })
         .catch(() => { isSyncing = false; document.getElementById('networkStatus').innerHTML = '🔴 Offline';});
     }
 
@@ -530,7 +561,6 @@
         else { recentTripsDB.push(tripObj); }
         
         recentTripsDB.sort((a,b) => String(a.date).localeCompare(String(b.date)));
-        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB}));
         
         renderRecentTrips(); clearForm();
         addToSyncQueue({ record_type: editingTripId ? "edit_trip" : "trip", trip_id: targetId, client_name: client, driver_name: driverName, vehicle_type: vType, trip_name: tripName, date: tDate, notes: notes, revenue: rev, driver_fee: fee });
@@ -563,7 +593,7 @@
         calcTotals(); window.scrollTo({top: 0});
     }
     function delTrip(idx) { 
-        if(confirm('Delete?')) { addToSyncQueue({record_type:"delete_trip", trip_id: recentTripsDB[idx].id}); recentTripsDB.splice(idx,1); localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); renderRecentTrips(); } 
+        if(confirm('Delete?')) { addToSyncQueue({record_type:"delete_trip", trip_id: recentTripsDB[idx].id}); recentTripsDB.splice(idx,1); renderRecentTrips(); } 
     }
     function clearForm() { editingTripId = null; document.getElementById('tripClientSelect').value=''; document.getElementById('tripDriverSelect').value=''; document.getElementById('tripNameSelect').value=''; document.getElementById('revEGP').value='0'; document.getElementById('tripDriverFee').value='0'; document.getElementById('tripNotes').value=''; document.getElementById('tripDate').value = getCurrentLocalDateTime(); calcTotals(); }
 
@@ -598,7 +628,6 @@
             document.querySelectorAll('#mastersTab input[type="number"]').forEach(i => i.value=''); document.getElementById('mTripName').value=''; editingMasterIndex.trip = -1;
         }
         loadDataToUI({users:usersDB, clients:clientsDB, drivers:driversDB, trips:tripsDB, recent:recentTripsDB, finances:financesDB, maintenance:maintenanceDB});
-        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); 
         addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); toast('Saved!');
     }
     function removeMasterItem(sheetName, name, idx) {
@@ -607,7 +636,6 @@
         if(sheetName === 'Drivers') driversDB.splice(idx, 1);
         if(sheetName === 'Trip_Types') tripsDB.splice(idx, 1);
         loadDataToUI({users:usersDB, clients:clientsDB, drivers:driversDB, trips:tripsDB, recent:recentTripsDB, finances:financesDB, maintenance:maintenanceDB});
-        localStorage.setItem('fleet_data_cache', JSON.stringify({status: 'success', users: usersDB, clients: clientsDB, drivers: driversDB, trips: tripsDB, recent: recentTripsDB, finances: financesDB, maintenance: maintenanceDB})); 
         addToSyncQueue({ record_type: "update_masters", clients: clientsDB, drivers: driversDB, trips: tripsDB }); toast('Deleted');
     }
 
@@ -638,7 +666,6 @@
         if (!reportContent || reportContent.indexOf('table') === -1) {
             return toast('⚠️ Please search and render report first!', 'warn');
         }
-        
         document.getElementById('printModalContent').innerHTML = reportContent;
         document.getElementById('printModal').style.display = 'flex';
     }
@@ -651,7 +678,7 @@
             link.download = 'Report_' + Date.now() + '.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
-            toast('✅ Report Saved to Phone!', 'success');
+            toast('✅ Report Saved!', 'success');
         }).catch(err => {
             toast('❌ Download Error: ' + err.message, 'error');
         });
